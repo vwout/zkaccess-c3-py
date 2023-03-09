@@ -1,0 +1,19 @@
+# General files
+.git
+.github
+config
+docs
+
+# Development
+.devcontainer
+.vscode
+.idea
+
+# Other virtualization methods
+.venv
+.vagrant
+
+# Temporary files
+**/__pycache__
+.pytest_cache
+*.egg-info
