@@ -1,0 +1,70 @@
+# IntelliJ IDEA
+.idea
+
+# pytest
+.pytest_cache
+.cache
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+.eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+pip-wheel-metadata
+
+# Logs
+*.log
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+coverage.xml
+nosetests.xml
+htmlcov/
+test-reports/
+test-results.xml
+test-output.xml
+
+# Mr Developer
+.project
+.pydevproject
+
+.python-version
+
+# emacs auto backups
+*~
+*#
+*.orig
+
+# venv stuff
+pyvenv.cfg
+pip-selfcheck.json
+venv
+.venv
+
+# Visual Studio Code
+.vscode/*
+!.vscode/cSpell.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+.env
+
+# Built docs
+docs/build
+
+# Windows Explorer
+desktop.ini
+
+# mypy
+/.mypy_cache/*
+/.dmypy.json
