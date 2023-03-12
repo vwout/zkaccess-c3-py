@@ -9,13 +9,13 @@ C3_MESSAGE_START        = 0xAA
 C3_MESSAGE_END          = 0x55
 C3_PROTOCOL_VERSION     = 0x01
 
-_Command = namedtuple("Command" , "request reply")
-C3_COMMAND_CONNECT      = _Command(0x76, 0xC8)
-C3_COMMAND_DISCONNECT   = _Command(0x02, 0xC8)
-C3_COMMAND_GETPARAM     = _Command(0x04, 0xC8)
-C3_COMMAND_DATATABLECFG = _Command(0x06, 0xC8)
-C3_COMMAND_CONTROL      = _Command(0x05, 0xC8)
-C3_COMMAND_RTLOG        = _Command(0x0B, 0xC8)
+CommandStruct = namedtuple("Command" , "request reply")
+C3_COMMAND_CONNECT      = CommandStruct(0x76, 0xC8)
+C3_COMMAND_DISCONNECT   = CommandStruct(0x02, 0xC8)
+C3_COMMAND_GETPARAM     = CommandStruct(0x04, 0xC8)
+C3_COMMAND_DATATABLECFG = CommandStruct(0x06, 0xC8)
+C3_COMMAND_CONTROL      = CommandStruct(0x05, 0xC8)
+C3_COMMAND_RTLOG        = CommandStruct(0x0B, 0xC8)
 
 @unique
 class IntEnumWithDescription(IntEnum):
