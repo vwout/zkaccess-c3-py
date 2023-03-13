@@ -1,5 +1,7 @@
-import consts
-import crc
+from c3 import consts
+from c3 import crc
+from c3 import utils
+import re
 import socket
 import logging
 
@@ -8,6 +10,7 @@ class C3:
     def __init__(self):
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2)
+        self._connected = False
         self.session_id: int = None
         self.request_nr: int = 0
         self.log = logging.getLogger("C3")
@@ -105,28 +108,54 @@ class C3:
 
         return receive_data, bytes_received
 
-        return response, bytes_received, receive_data
+    def _is_connected(self) -> bool:
+        #try:
+        #    # this will try to read bytes without blocking and also without removing them from buffer (peek only)
+        #    data = self._sock.recv(1, socket.MSG_DONTWAIT | socket.MSG_PEEK)
+        #    if len(data) == 0:
+        #        return True
+        #except BlockingIOError:
+        #    return True  # socket is open and reading from it would block
+        #except ConnectionResetError:
+        #    return False  # socket was closed for some other reason
+        #except Exception as e:
+        #    return False
+        return self._connected
 
     def log_level(self, level: int):
         self.log.setLevel(level)
 
     def connect(self, host: str, port: int = consts.C3_PORT_DEFAULT) -> bool:
-        connected = False
+        self._connected = False
 
         self._sock.connect((host, port))
         receive_data, bytes_received = self._send_receive(consts.C3_COMMAND_CONNECT)
         if bytes_received > 2:
             self.session_id = (receive_data[1] << 8) + receive_data[0]
             self.log.debug("Connected with Session ID %x", self.session_id)
-            connected = True
+            self._connected = True
         else:
             self.session_id = 0
 
-        return connected
+        return self._connected
 
     def disconnect(self):
         self._send_receive(consts.C3_COMMAND_DISCONNECT)
         self._sock.close()
 
+        self._connected = False
         self.session_id = 0
         self.request_nr = 0
+
+    def get_device_param(self, request_parameters: list[str]) -> dict:
+        parameter_values = {}
+        if self._is_connected():
+            message, _ = self._send_receive(consts.C3_COMMAND_GETPARAM, ','.join(request_parameters))
+            message_str = message.decode(encoding='ascii', errors='ignore')
+            pattern = re.compile(r"([\w~]+)=(\w+)")
+            for (k, v) in re.findall(pattern, message_str):
+                parameter_values[k] = v
+        else:
+            raise ConnectionError("No connection to C3 panel.")
+
+        return parameter_values
