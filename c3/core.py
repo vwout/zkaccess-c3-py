@@ -1,6 +1,7 @@
 from c3 import consts
 from c3 import crc
 from c3 import utils
+from c3 import rtlog
 import re
 import socket
 import logging
@@ -35,6 +36,7 @@ class C3:
             checksum = crc.crc16(data[1:-3])
 
             if utils.lsb(checksum) == data[-3] or utils.msb(checksum) == data[-2]:
+                # Return all data without header (leading) and crc (trailing)
                 message = bytearray(data[5:-3])
             else:
                 self.log.debug("Payload checksum is invalid: %s expected %x", data[-3:-2].hex(), checksum)
@@ -84,7 +86,6 @@ class C3:
         self.log.debug("Receiving header: %s", header.hex(' ', 1))
 
         received_command, data_size = self._get_message_header(header)
-
         if received_command == expected_command.reply:
             # Get the message data and signature
             payload = self._sock.recv(data_size + 3)
@@ -105,8 +106,13 @@ class C3:
         bytes_written = self._send(command, data)
         if bytes_written > 0:
             receive_data, bytes_received = self._receive(command)
+            if bytes_received > 2:
+                session_id = (receive_data[1] << 8) + receive_data[0]
+                #msg_seq = (receive_data[3] << 8) + receive_data[2]
+                if self.session_id != session_id:
+                    raise ValueError("Data received with invalid session ID")
 
-        return receive_data, bytes_received
+        return receive_data[4:], bytes_received-4
 
     def _is_connected(self) -> bool:
         #try:
@@ -127,15 +133,16 @@ class C3:
 
     def connect(self, host: str, port: int = consts.C3_PORT_DEFAULT) -> bool:
         self._connected = False
+        self.session_id = 0
 
         self._sock.connect((host, port))
-        receive_data, bytes_received = self._send_receive(consts.C3_COMMAND_CONNECT)
-        if bytes_received > 2:
-            self.session_id = (receive_data[1] << 8) + receive_data[0]
-            self.log.debug("Connected with Session ID %x", self.session_id)
-            self._connected = True
-        else:
-            self.session_id = 0
+        bytes_written = self._send(consts.C3_COMMAND_CONNECT)
+        if bytes_written > 0:
+            receive_data, bytes_received = self._receive(consts.C3_COMMAND_CONNECT)
+            if bytes_received > 2:
+                self.session_id = (receive_data[1] << 8) + receive_data[0]
+                self.log.debug("Connected with Session ID %x", self.session_id)
+                self._connected = True
 
         return self._connected
 
