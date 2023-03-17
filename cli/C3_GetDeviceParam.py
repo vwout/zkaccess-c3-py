@@ -16,6 +16,7 @@ def main():
     panel = C3()
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
+
     if panel.connect(args.host):
         params = panel.get_device_param(["~SerialNumber",
                                          "LockCount",
