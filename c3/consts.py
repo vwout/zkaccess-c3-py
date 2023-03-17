@@ -5,17 +5,17 @@ from collections import namedtuple
 C3_PORT_DEFAULT = 4370
 
 # Protocol commands
-C3_MESSAGE_START        = 0xAA
-C3_MESSAGE_END          = 0x55
-C3_PROTOCOL_VERSION     = 0x01
+C3_MESSAGE_START = 0xAA
+C3_MESSAGE_END = 0x55
+C3_PROTOCOL_VERSION = 0x01
 
 CommandStruct = namedtuple("Command" , "request reply")
-C3_COMMAND_CONNECT      = CommandStruct(0x76, 0xC8)
-C3_COMMAND_DISCONNECT   = CommandStruct(0x02, 0xC8)
-C3_COMMAND_GETPARAM     = CommandStruct(0x04, 0xC8)
-C3_COMMAND_DATATABLECFG = CommandStruct(0x06, 0xC8)
-C3_COMMAND_CONTROL      = CommandStruct(0x05, 0xC8)
-C3_COMMAND_RTLOG        = CommandStruct(0x0B, 0xC8)
+C3_COMMAND_CONNECT = CommandStruct(0x76, 0xC8)
+C3_COMMAND_DISCONNECT = CommandStruct(0x02, 0xC8)
+C3_COMMAND_GETPARAM = CommandStruct(0x04, 0xC8)
+C3_COMMAND_DATATABLE_CFG = CommandStruct(0x06, 0xC8)
+C3_COMMAND_CONTROL = CommandStruct(0x05, 0xC8)
+C3_COMMAND_RTLOG = CommandStruct(0x0B, 0xC8)
 
 @unique
 class IntEnumWithDescription(IntEnum):
@@ -42,90 +42,99 @@ class IntEnumWithDescription(IntEnum):
 
 # Control operations
 class ControlOperation(IntEnumWithDescription):
-    OUTPUT         = 1, "Output operation (door or auxilary)"
-    CANCEL_ALARM   = 2, "Cancel alarm"
+    OUTPUT = 1,         "Output operation (door or auxilary)"
+    CANCEL_ALARM = 2,   "Cancel alarm"
     RESTART_DEVICE = 3, "Restart Device"
     ENDIS_NO_STATE = 4, "Enable/disable normal open state"
 
+
 class ControlOutputAddress(IntEnumWithDescription):
     DOOR_OUTPUT = 1, "Door output"
-    AUX_OUTPUT  = 2, "Auxiliary output"
+    AUX_OUTPUT = 2,  "Auxiliary output"
+
 
 # Event values
 class VerificationMode(IntEnumWithDescription):
-    NONE               = 0, "None"
-    FINGER             = 1, "Only finger"
-    PASSWORD           = 3, "Only password"
-    CARD               = 4, "Only card"
+    NONE = 0,                "None"
+    FINGER = 1,              "Only finger"
+    PASSWORD = 3,            "Only password"
+    CARD = 4,                "Only card"
     CARD_WITH_PASSWORD = 11, "Card and password"
-    OTHER              = 200, "Others"
+    OTHER = 200,             "Others"
+
 
 class EventType(IntEnumWithDescription):
-    # [0]   = "Normal Punch Open",
-    # [1]   = "Punch during Normal Open Time Zone",
-    # [2]   = "First Card Normal Open (Punch Card)",
-    # [3]   = "Multi-Card Open (Punching Card)",
-    # [4]   = "Emergency Password Open",
-    # [5]   = "Open during Normal Open Time Zone",
-    # [6]   = "Linkage Event Triggered",
-    # [7]   = "Cancel Alarm",
-    # [8]   = "Remote Opening",
-    # [9]   = "Remote Closing",
-    # [10]  = "Disable Intraday Normal Open Time Zone",
-    # [11]  = "Enable Intraday Normal Open Time Zone",
-    # [12]  = "Open Auxiliary Output",
-    # [13]  = "Close Auxiliary Output",
-    # [14]  = "Press Fingerprint Open",
-    # [15]  = "Multi-Card Open (Press Fingerprint)",
-    # [16]  = "Press Fingerprint during Normal Open Time Zone",
-    # [17]  = "Card plus Fingerprint Open",
-    # [18]  = "First Card Normal Open (Press Fingerprint)",
-    # [19]  = "First Card Normal Open (Card plus Fingerprint)",
-    # [20]  = "Too Short Punch Interval",
-    # [21]  = "Door Inactive Time Zone (Punch Card)",
-    # [22]  = "Illegal Time Zone",
-    # [23]  = "Access Denied",
-    # [24]  = "Anti-Passback",
-    # [25]  = "Interlock",
-    # [26]  = "Multi-Card Authentication (Punching Card)",
-    # [27]  = "Unregistered Card",
-    # [28]  = "Opening Timeout:",
-    # [29]  = "Card Expired",
-    # [30]  = "Password Error",
-    # [31]  = "Too Short Fingerprint Pressing Interval",
-    # [32]  = "Multi-Card Authentication (Press Fingerprint)",
-    # [33]  = "Fingerprint Expired",
-    # [34]  = "Unregistered Fingerprint",
-    # [35]  = "Door Inactive Time Zone (Press Fingerprint)",
-    # [36]  = "Door Inactive Time Zone (Exit Button)",
-    # [37]  = "Failed to Close during Normal Open Time Zone",
-    # [101] = "Duress Password Open",
-    # [102] = "Opened Accidentally",
-    # [103] = "Duress Fingerprint Open",
-    # [200] = "Door Opened Correctly",
-    # [201] = "Door Closed Correctly",
-    # [202] = "Exit button Open",
-    # [203] = "Multi-Card Open (Card plus Fingerprint)",
-    # [204] = "Normal Open Time Zone Over",
-    # [205] = "Remote Normal Opening",
-    # [206] = "Device Start",
-    # [220] = "Auxiliary Input Disconnected",
-    # [221] = "Auxiliary Input Shorted",
+    NA = -1, "N/A",
+    NORMAL_PUNCH_OPEN = 0, "Normal Punch Open",
+    PUNCH_NORMAL_OPEN_TZ = 1, "Punch during Normal Open Time Zone",
+    FIRST_CARD_NORMAL_OPEN = 2, "First Card Normal Open (Punch Card)",
+    MULTI_CARD_OPEN = 3, "Multi-Card Open (Punching Card)",
+    EMERGENCY_PASS_OPEN = 4, "Emergency Password Open",
+    OPEN_NORMAL_OPEN_TZ = 5, "Open during Normal Open Time Zone",
+    LINKAGE_EVENT_TRIGGER = 6, "Linkage Event Triggered",
+    CANCEL_ALARM = 7, "Cancel Alarm",
+    REMOTE_OPENING = 8, "Remote Opening",
+    REMOTE_CLOSING = 9, "Remote Closing",
+    DISABLE_INTRADAY_NORMAL_OPEN_TZ = 10, "Disable Intraday Normal Open Time Zone",
+    ENABLE_INTRADAY_NORMAL_OPEN_TZ = 11, "Enable Intraday Normal Open Time Zone",
+    OPEN_AUX_OUTPUT = 12, "Open Auxiliary Output",
+    CLOSE_AUX_OUTPUT = 13, "Close Auxiliary Output",
+    PRESS_FINGER_OPEN = 14, "Press Fingerprint Open",
+    MULTI_CARD_OPEN_FP = 15, "Multi-Card Open (Press Fingerprint)",
+    FP_NORMAL_OPEN_TZ = 16, "Press Fingerprint during Normal Open Time Zone",
+    CARD_FP_OPEN = 17, "Card plus Fingerprint Open",
+    FIRST_CARD_NORMAL_OPEN_FP = 18, "First Card Normal Open (Press Fingerprint)",
+    FIRST_CARD_NORMAL_OPEN_CARD_FP = 19, "First Card Normal Open (Card plus Fingerprint)",
+    TOO_SHORT_PUNCH_INTERVAL = 20, "Too Short Punch Interval",
+    DOOR_INACTIVE_TZ = 21, "Door Inactive Time Zone (Punch Card)",
+    ILLEGAL_TZ = 22, "Illegal Time Zone",
+    ACCESS_DENIED = 23, "Access Denied",
+    ANTI_PASSBACK = 24, "Anti-Passback",
+    INTERLOCK = 25, "Interlock",
+    MULTI_CARD_AUTH = 26, "Multi-Card Authentication (Punching Card)",
+    UNREGISTERED_CARD = 27, "Unregistered Card",
+    OPENING_TIMEOUT = 28, "Opening Timeout:",
+    CARD_EXPIRED = 29, "Card Expired",
+    PASSWORD_ERROR = 30, "Password Error",
+    TOO_SHORT_FP_INTERVAL = 31, "Too Short Fingerprint Pressing Interval",
+    MULTI_CARD_AUTH_FP = 32, "Multi-Card Authentication (Press Fingerprint)",
+    FP_EXPIRED = 33, "Fingerprint Expired",
+    UNREGISTERED_FP = 34, "Unregistered Fingerprint",
+    DOOR_INACTIVE_TZ_FP = 35, "Door Inactive Time Zone (Press Fingerprint)",
+    DOOR_INACTIVE_TZ_EXIT = 36, "Door Inactive Time Zone (Exit Button)",
+    FAILED_CLOSE_NORMAL_OPEN_TZ = 37, "Failed to Close during Normal Open Time Zone",
+    DURESS_PASSWORD_OPEN = 101, "Duress Password Open",
+    OPENED_ACCIDENT = 102, "Opened Accidentally",
+    DURESS_FP_OPEN = 103, "Duress Fingerprint Open",
+    DOOR_OPENED_CORRECT = 200, "Door Opened Correctly",
+    DOOR_CLOSED_CORRECT = 201, "Door Closed Correctly",
+    EXIT_BUTTON_OPEN = 202, "Exit button Open",
+    MULTI_CARD_OPEN_CARD_FP = 203, "Multi-Card Open (Card plus Fingerprint)",
+    NORMAL_OPEN_TZ_OVER = 204, "Normal Open Time Zone Over",
+    REMOTE_NORMAL_OPEN = 205, "Remote Normal Opening",
+    DEVICE_START = 206, "Device Start",
+    AUX_INPUT_DISCONNECT = 220, "Auxiliary Input Disconnected",
+    AUX_INPUT_SHORT = 221, "Auxiliary Input Shorted",
     DOOR_ALARM_STATUS = 255, "Current door and alarm status"
+
 
 class InOutStatus(IntEnumWithDescription):
     ENTRY = 0, "Entry"
-    EXIT  = 3, "Exit"
-    NONE  = 2, "None"
+    EXIT = 3,  "Exit"
+    NONE = 2,  "None"
+
 
 class AlarmStatus(IntEnumWithDescription):
-    NONE              = 0, "None"
-    ALARM             = 1, "Alarm"
+    NONE = 0,              "None"
+    ALARM = 1,             "Alarm"
     DOOR_OPEN_TIMEOUT = 2, "Door opening timeout"
+
 
 class DssStatus(IntEnumWithDescription):
     UNKNOWN = 0, "No Door Status Sensor"
-    CLOSED  = 1, "Door closed"
-    OPEN    = 2, "Door open"
+    CLOSED = 1,  "Door closed"
+    OPEN = 2,    "Door open"
+    WHAT1 = 16,   "What is 0x10??"
+    WHAT2 = 17,   "What is 0x11??"
 
 
