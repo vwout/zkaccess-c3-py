@@ -2,6 +2,7 @@ from c3 import consts
 from c3 import crc
 from c3 import utils
 from c3 import rtlog
+from c3 import controldevice
 import re
 import socket
 import logging
@@ -170,19 +171,28 @@ class C3:
     def get_rt_log(self) -> list[rtlog.RTLogRecord]:
         records = []
 
-        message, message_length = self._send_receive(consts.C3_COMMAND_RTLOG)
+        if self._is_connected():
+            message, message_length = self._send_receive(consts.C3_COMMAND_RTLOG)
 
-        # One RT log is 16 bytes
-        # Ensure the array is not empty and a multiple of 16
-        if message_length % 16 == 0:
-            logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
-            for log_message in logs_messages:
-                self.log.debug("Received RT Log: %s", log_message.hex(" "))
-                if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
-                    records.append(rtlog.DoorAlarmStatusRecord.from_bytes(log_message))
-                else:
-                    records.append(rtlog.EventRecord.from_bytes(log_message))
+            # One RT log is 16 bytes
+            # Ensure the array is not empty and a multiple of 16
+            if message_length % 16 == 0:
+                logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
+                for log_message in logs_messages:
+                    self.log.debug("Received RT Log: %s", log_message.hex(" "))
+                    if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
+                        records.append(rtlog.DoorAlarmStatusRecord.from_bytes(log_message))
+                    else:
+                        records.append(rtlog.EventRecord.from_bytes(log_message))
+            else:
+                raise ValueError("Received RT Log(s) size is not a multiple of 16: %d" % message_length)
         else:
-            raise ValueError("Received RT Log(s) size is not a multiple of 16: %d" % message_length)
+            raise ConnectionError("No connection to C3 panel.")
 
         return records
+
+    def control_device(self, control_command: controldevice.ControlDeviceBase):
+        if self._is_connected():
+            self._send_receive(consts.C3_COMMAND_CONTROL, control_command.to_bytes())
+        else:
+            raise ConnectionError("No connection to C3 panel.")
