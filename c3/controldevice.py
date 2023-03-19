@@ -3,7 +3,7 @@ from c3 import consts
 
 
 # A ControlDevice is a binary message of 5 bytes send to the C3 access panel.
-# It changes the states of the doors, auxilary relays and alarms.
+# It changes the states of the doors, auxiliary relays and alarms.
 # All multibyte values are stored as Little-endian.
 #
 # Byte       0  1  2  3  4
@@ -19,7 +19,7 @@ from c3 import consts
 # Param 4 is reserved for future use (defaults to 0)
 # Operation 1: Output operation
 #   Param 1: Door number or auxiliary output number
-#   Param 2: The address type of output operation (1: Door ouptput, 2: Auxiliary output)
+#   Param 2: The address type of output operation (1: Door output, 2: Auxiliary output)
 #   Param 3: Duration of the open operation, only for address type = 1 (door output).
 #            0: close, 255: normal open state, 1~254: normal open duration
 # Operation 2: Cancel alarm

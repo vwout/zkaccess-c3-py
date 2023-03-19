@@ -95,9 +95,9 @@ control_device(control_command_object)
 ```
 
 Sends a control command to the access panel to perform an action on the requipment. The control_command is an instance of one of the following objects:
-- `ControlDeviceOutput(output_number, address, duration)`: Open or close a door or auxilary device
-  - *output_number*: The number of the door or auxilary to control (1-4)
-  - *address*: Determines whether *door_number* is a door (*address* = 1) or an auxilary (*address* = 2)
+- `ControlDeviceOutput(output_number, address, duration)`: Open or close a door or auxiliary device
+  - *output_number*: The number of the door or auxiliary to control (1-4)
+  - *address*: Determines whether *door_number* is a door (*address* = 1) or an auxiliary (*address* = 2)
   - *duration*: The duration for which the door will be open; 0 will close the door immediately, 1-254 will leave the door open for that number of seconds: 255 will leave the door open for an undetermined period
 - `ControlDeviceCancelAlarms()`: Cancel any triggered alarm
 - `ControlDeviceRestart()`: Reboot the access panel

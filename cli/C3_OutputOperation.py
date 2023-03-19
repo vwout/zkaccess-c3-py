@@ -10,8 +10,8 @@ from c3 import controldevice
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('host', help='C3 panel IP address or host name')
-    parser.add_argument('--output', choices=['door', 'aux'], required=True, help='Output is door or auxilary')
-    parser.add_argument('--number', type=int, required=True, help='Door or auxilary output number')
+    parser.add_argument('--output', choices=['door', 'aux'], required=True, help='Output is door or auxiliary')
+    parser.add_argument('--number', type=int, required=True, help='Door or auxiliary output number')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--open', action="store_true", help='Set state to normal open')
     group.add_argument('--close', action="store_true", help='Set state to closed')

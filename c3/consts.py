@@ -43,7 +43,7 @@ class _IntEnumWithDescription(IntEnum):
 
 # Control operations
 class ControlOperation(_IntEnumWithDescription):
-    OUTPUT = 1,         "Output operation (door or auxilary)"
+    OUTPUT = 1,         "Output operation (door or auxiliary)"
     CANCEL_ALARM = 2,   "Cancel alarm"
     RESTART_DEVICE = 3, "Restart Device"
     ENDIS_NO_STATE = 4, "Enable/disable normal open state"
