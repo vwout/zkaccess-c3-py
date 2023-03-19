@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-
-from c3 import C3
-from c3 import controldevice
 import argparse
 import logging
 import sys
+from c3 import C3
+from c3 import controldevice
 
 
 def main():

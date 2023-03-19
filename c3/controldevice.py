@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from c3 import consts
 
 
 # A ControlDevice is a binary message of 5 bytes send to the C3 access panel.
 # It changes the states of the doors, auxilary relays and alarms.
-# All multi-byte values are stored as Little-endian.
+# All multibyte values are stored as Little-endian.
 #
 # Byte       0  1  2  3  4
 #            01:01:01:c8:00
@@ -35,12 +35,13 @@ from c3 import consts
 #   Param 2: Enable / disable (0: disable, 1: enable'
 #   Param 3: 0 (null)
 class ControlDeviceBase(ABC):
-    def __init__(self, operation: consts.ControlOperation, param1: int = None, param2: int = None, param3: int = None, param4: int = None):
+    def __init__(self, operation: consts.ControlOperation, param1: int = None, param2: int = None, param3: int = None,
+                 param4: int = None):
         self.operation: consts.ControlOperation = operation
-        self.param1:int = param1
-        self.param2:int = param2
-        self.param3:int = param3
-        self.param4:int = param4
+        self.param1: int = param1
+        self.param2: int = param2
+        self.param3: int = param3
+        self.param4: int = param4
 
     @classmethod
     def from_bytes(cls, data: bytes):

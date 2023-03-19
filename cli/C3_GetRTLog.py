@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-
-from c3 import C3
-from c3.utils import C3DateTime
 import argparse
 import logging
 import sys
 import time
+from c3 import C3
 
 
 def main():

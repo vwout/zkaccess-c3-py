@@ -34,21 +34,21 @@ class Crc16Builder:
         return self._crc & 0xFFFF
 
 
-def crc16(data, crc = None):
+def crc16(data, crc=None):
     builder = Crc16Builder(crc)
 
     if hasattr(data, '__iter__'):
-        for b in data:
-            if type(b) is int:
-                builder.add_byte(b)
-            elif type(b) is str:
-                if len(b) == 1:
-                    builder.add_byte(ord(b))
+        for byte in data:
+            if isinstance(byte, int):
+                builder.add_byte(byte)
+            elif isinstance(byte, str):
+                if len(byte) == 1:
+                    builder.add_byte(ord(byte))
                 else:
-                    for c in b:
-                        builder.add_byte(ord(c))
+                    for char in byte:
+                        builder.add_byte(ord(char))
             else:
-                raise TypeError("Data of type %s is not supported" % type(b))
+                raise TypeError("Data of type %s is not supported" % type(byte))
     else:
         raise TypeError("Data '%s' is not iterable" % data)
 

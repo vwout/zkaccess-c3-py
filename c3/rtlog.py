@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from c3 import consts
 from c3.utils import C3DateTime
 
+
 class RTLogRecord(ABC):
     @abstractmethod
     def is_door_alarm(self) -> bool:
@@ -17,7 +18,7 @@ class RTLogRecord(ABC):
 # If the value of byte 10 (the event type) is not 255, the RTLog is a Realtime Event.
 
 # Door/Alarm Realtime Status record
-# All multi-byte values are stored as Little-endian.
+# All multibyte values are stored as Little-endian.
 #
 # Byte:                    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 #                          01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
@@ -38,10 +39,10 @@ class RTLogRecord(ABC):
 #                                                                                           2017-7-30 16:51:49
 class DoorAlarmStatusRecord(RTLogRecord):
     def __init__(self):
-        self.alarm_status = bytes(4),
-        self.dss_status = bytes(4),
-        self.verified: consts.VerificationMode = consts.VerificationMode.NONE,
-        self.event_type: consts.EventType = consts.EventType.NA,
+        self.alarm_status = bytes(4)
+        self.dss_status = bytes(4)
+        self.verified: consts.VerificationMode = consts.VerificationMode.NONE
+        self.event_type: consts.EventType = consts.EventType.NA
         self.time_second = 0
 
     @classmethod
@@ -96,20 +97,21 @@ class DoorAlarmStatusRecord(RTLogRecord):
                     "%-12s %-10s" % ("alarm_status", self.alarm_status.hex(" "))]
 
         for i in range(0, 4):
-            for v in consts.AlarmStatus:
-                if v != consts.AlarmStatus.NONE:
-                    if self.alarm_status[i] & v == v:
-                        repr_arr.append("    Door %-2s %-4s %s" % (i, v, repr(v)))
+            for status in consts.AlarmStatus:
+                if status != consts.AlarmStatus.NONE:
+                    if self.alarm_status[i] & status == status:
+                        repr_arr.append("    Door %-2s %-4s %s" % (i, status, repr(status)))
 
         repr_arr.append("%-12s %-10s" % ("dss_status", self.dss_status.hex(" ")))
         for i in range(0, 4):
-            repr_arr.append("    Door %-2s %-4s %s" % (i+1, self.dss_status[i], repr(consts.DssStatus(self.dss_status[i]))))
+            repr_arr.append("    Door %-2s %-4s %s" % (i+1, self.dss_status[i],
+                                                       repr(consts.DssStatus(self.dss_status[i]))))
 
         return "\r\n".join(repr_arr)
 
 
 # Realtime Event record
-# All multi-byte values are stored as Little-endian.
+# All multibyte values are stored as Little-endian.
 #
 # Byte:              0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 #                    01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
@@ -129,12 +131,12 @@ class DoorAlarmStatusRecord(RTLogRecord):
 # Time_second (byte 12-15)                               a5:ad:ad:21 => (big endian:) 21ADADA5 = 2017-7-30 16:51:49
 class EventRecord(RTLogRecord):
     def __init__(self):
-        self.card_no = 0,
-        self.pin = 0,
-        self.verified: consts.VerificationMode = consts.VerificationMode.NONE,
-        self.door_id = 0,
-        self.event_type: consts.EventType = consts.EventType.NA,
-        self.in_out_state: consts.InOutStatus = consts.InOutStatus.NONE,
+        self.card_no = 0
+        self.pin = 0
+        self.verified: consts.VerificationMode = consts.VerificationMode.NONE
+        self.door_id = 0
+        self.event_type: consts.EventType = consts.EventType.NA
+        self.in_out_state: consts.InOutStatus = consts.InOutStatus.NONE
         self.time_second = 0
 
     @classmethod

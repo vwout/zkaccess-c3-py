@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-
-from c3 import C3
-from c3.utils import C3DateTime
 import argparse
 import logging
 import sys
+from c3 import C3
+from c3.utils import C3DateTime
 
 
 def main():
@@ -18,14 +17,15 @@ def main():
     panel.log.setLevel(logging.DEBUG)
 
     if panel.connect(args.host):
-        params = panel.get_device_param(["~SerialNumber",
+        params = panel.get_device_param(["~ZKFPVersion",
+                                         "~SerialNumber",
                                          "LockCount",
                                          "ReaderCount",
                                          "AuxInCount",
                                          "AuxOutCount",
                                          "DateTime"])
 
-        for k in params.keys():
+        for k in params:
             if k == "DateTime":
                 print("- %s: %s" % (k, C3DateTime.from_value(int(params.get(k))).isoformat()))
             else:

@@ -1,11 +1,11 @@
+import re
+import socket
+import logging
 from c3 import consts
 from c3 import crc
 from c3 import utils
 from c3 import rtlog
 from c3 import controldevice
-import re
-import socket
-import logging
 
 
 class C3:
@@ -24,7 +24,7 @@ class C3:
         data_size = 0
 
         if len(data) >= 5:
-            if data[0] == consts.C3_MESSAGE_START: #and data[1] == consts.C3_PROTOCOL_VERSION:
+            if data[0] == consts.C3_MESSAGE_START:  # and data[1] == consts.C3_PROTOCOL_VERSION:
                 command = data[2]
                 data_size = data[3] + (data[4] * 255)
 
@@ -58,13 +58,13 @@ class C3:
                              utils.msb(self.request_nr)])
 
         if data:
-            for b in data:
-                if type(b) is int:
-                    message.append(b)
-                elif type(b) is str:
-                    message.append(ord(b))
+            for byte in data:
+                if isinstance(byte, int):
+                    message.append(byte)
+                elif isinstance(byte, str):
+                    message.append(ord(byte))
                 else:
-                    raise TypeError("Data does not contain int or str: %s is %s" % (str(b), type(b)))
+                    raise TypeError("Data does not contain int or str: %s is %s" % (str(byte), type(byte)))
 
         checksum = crc.crc16(message)
         message.append(utils.lsb(checksum))
@@ -94,7 +94,8 @@ class C3:
             message = self._get_message(header + payload)
 
             if len(message) != data_size:
-                raise ValueError("Length of received message (%d) does not match specified size (%d)" % (len(message), data_size))
+                raise ValueError("Length of received message (%d) does not match specified size (%d)" % (len(message),
+                                                                                                         data_size))
         else:
             data_size = 0
 
@@ -109,23 +110,23 @@ class C3:
             receive_data, bytes_received = self._receive(command)
             if bytes_received > 2:
                 session_id = (receive_data[1] << 8) + receive_data[0]
-                #msg_seq = (receive_data[3] << 8) + receive_data[2]
+                # msg_seq = (receive_data[3] << 8) + receive_data[2]
                 if self.session_id != session_id:
                     raise ValueError("Data received with invalid session ID")
 
         return receive_data[4:], bytes_received-4
 
     def _is_connected(self) -> bool:
-        #try:
+        # try:
         #    # this will try to read bytes without blocking and also without removing them from buffer (peek only)
         #    data = self._sock.recv(1, socket.MSG_DONTWAIT | socket.MSG_PEEK)
         #    if len(data) == 0:
         #        return True
-        #except BlockingIOError:
+        # except BlockingIOError:
         #    return True  # socket is open and reading from it would block
-        #except ConnectionResetError:
+        # except ConnectionResetError:
         #    return False  # socket was closed for some other reason
-        #except Exception as e:
+        # except Exception as e:
         #    return False
         return self._connected
 
