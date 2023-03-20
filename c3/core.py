@@ -9,14 +9,15 @@ from c3 import controldevice
 
 
 class C3:
+    log = logging.getLogger("C3")
+    log.setLevel(logging.ERROR)
+
     def __init__(self):
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2)
         self._connected = False
-        self.session_id: int = None
+        self.session_id: int = 0
         self.request_nr: int = 0
-        self.log = logging.getLogger("C3")
-        self.log.setLevel(logging.ERROR)
 
     @classmethod
     def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
@@ -30,7 +31,8 @@ class C3:
 
         return command, data_size
 
-    def _get_message(self, data: [bytes or bytearray]) -> bytearray:
+    @classmethod
+    def _get_message(cls, data: [bytes or bytearray]) -> bytearray:
         message = bytearray()
         if data[-1] == consts.C3_MESSAGE_END:
             # Get the message payload, without start, crc and end bytes
@@ -40,9 +42,9 @@ class C3:
                 # Return all data without header (leading) and crc (trailing)
                 message = bytearray(data[5:-3])
             else:
-                self.log.debug("Payload checksum is invalid: %s expected %x", data[-3:-2].hex(), checksum)
+                raise ValueError("Payload checksum is invalid: %s expected %x" % (data[-3:-2].hex(), checksum))
         else:
-            self.log.debug("Payload does not include message end marker (%s)", data[-1])
+            raise ValueError("Payload does not include message end marker (%s)" % data[-1])
 
         return message
 
@@ -132,6 +134,68 @@ class C3:
 
     def log_level(self, level: int):
         self.log.setLevel(level)
+
+    @classmethod
+    def discover(cls, interface_address: str = None, timeout: int = 2):
+        devices = []
+
+        data = consts.C3_DISCOVERY_MESSAGE
+        message_length = len(data)
+        message = bytearray([consts.C3_PROTOCOL_VERSION,
+                             consts.C3_COMMAND_DISCOVER.request or 0x00,
+                             utils.lsb(message_length),
+                             utils.msb(message_length)])
+
+        for byte in data:
+            message.append(ord(byte))
+
+        checksum = crc.crc16(message)
+        message.append(utils.lsb(checksum))
+        message.append(utils.msb(checksum))
+
+        message.insert(0, consts.C3_MESSAGE_START)
+        message.append(consts.C3_MESSAGE_END)
+
+        if interface_address:
+            ips = [interface_address]
+        else:
+            interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
+            ips = [ip[-1][0] for ip in interfaces]
+        for ip in ips:
+            cls.log.debug(f"Discover on {ip}")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            sock.settimeout(timeout)
+            sock.bind((ip, 0))
+            sock.sendto(message, ("255.255.255.255", 65535))
+
+            while True:
+                try:
+                    payload = sock.recv(1024)
+                except socket.timeout:
+                    break
+
+                if payload:
+                    parameter_values = {}
+
+                    received_command, data_size = cls._get_message_header(payload)
+                    if received_command == consts.C3_COMMAND_DISCOVER.reply:
+                        # Get the message data and signature
+                        message = cls._get_message(payload)
+
+                        if len(message) != data_size:
+                            raise ValueError(
+                                "Length of received message (%d) does not match specified size (%d)" % (len(message),
+                                                                                                        data_size))
+                        message_str = message.decode(encoding='ascii', errors='ignore')
+                        pattern = re.compile(r"([\w~]+)=([^,]+)")
+                        for (k, v) in re.findall(pattern, message_str):
+                            parameter_values[k] = v
+
+                        devices.append(parameter_values)
+            sock.close()
+
+        return devices
 
     def connect(self, host: str, port: int = consts.C3_PORT_DEFAULT) -> bool:
         self._connected = False

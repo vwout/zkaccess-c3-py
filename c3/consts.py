@@ -8,8 +8,10 @@ C3_PORT_DEFAULT = 4370
 C3_MESSAGE_START = 0xAA
 C3_MESSAGE_END = 0x55
 C3_PROTOCOL_VERSION = 0x01
+C3_DISCOVERY_MESSAGE = "CallSecurityDevice"
 
 CommandStruct = namedtuple("Command", "request reply")
+C3_COMMAND_DISCOVER = CommandStruct(0x14, 0xC8)
 C3_COMMAND_CONNECT = CommandStruct(0x76, 0xC8)
 C3_COMMAND_DISCONNECT = CommandStruct(0x02, 0xC8)
 C3_COMMAND_GETPARAM = CommandStruct(0x04, 0xC8)
