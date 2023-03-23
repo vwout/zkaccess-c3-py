@@ -171,7 +171,7 @@ class C3:
 
             while True:
                 try:
-                    payload = sock.recv(1024)
+                    payload = sock.recv(64*1024)
                 except socket.timeout:
                     break
 

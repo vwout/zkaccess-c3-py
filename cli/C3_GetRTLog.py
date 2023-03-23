@@ -4,6 +4,7 @@ import logging
 import sys
 import time
 from c3 import C3
+from c3 import rtlog
 
 
 def main():
@@ -17,12 +18,20 @@ def main():
     panel.log.setLevel(logging.DEBUG)
 
     if panel.connect(args.host):
-        while True:
-            records = panel.get_rt_log()
-            for record in records:
-                print(repr(record))
+        try:
+            while True:
+                last_record_is_status = False
 
-            time.sleep(2)
+                records = panel.get_rt_log()
+                for record in records:
+                    print(repr(record))
+                    if isinstance(record, rtlog.DoorAlarmStatusRecord):
+                        last_record_is_status = True
+
+                if last_record_is_status:
+                    time.sleep(10)
+        except KeyboardInterrupt:
+            pass
 
     panel.disconnect()
 
