@@ -62,6 +62,8 @@ class VerificationMode(_IntEnumWithDescription):
     FINGER = 1,              "Only finger"
     PASSWORD = 3,            "Only password"
     CARD = 4,                "Only card"
+    CARD_OR_FINGER = 6,      "Card or finger"
+    CARD_WITH_FINGER = 10,   "Card and finger"
     CARD_WITH_PASSWORD = 11, "Card and password"
     OTHER = 200,             "Others"
 
@@ -106,6 +108,8 @@ class EventType(_IntEnumWithDescription):
     DOOR_INACTIVE_TZ_FP = 35, "Door Inactive Time Zone (Press Fingerprint)"
     DOOR_INACTIVE_TZ_EXIT = 36, "Door Inactive Time Zone (Exit Button)"
     FAILED_CLOSE_NORMAL_OPEN_TZ = 37, "Failed to Close during Normal Open Time Zone"
+    VERIFY_TYPE_INVALID = 41, "Verify Type Invalid"
+    WG_FORMAT_ERROR = 42, "WG Format Error"
     DURESS_PASSWORD_OPEN = 101, "Duress Password Open"
     OPENED_ACCIDENT = 102, "Opened Accidentally"
     DURESS_FP_OPEN = 103, "Duress Fingerprint Open"
@@ -116,6 +120,7 @@ class EventType(_IntEnumWithDescription):
     NORMAL_OPEN_TZ_OVER = 204, "Normal Open Time Zone Over"
     REMOTE_NORMAL_OPEN = 205, "Remote Normal Opening"
     DEVICE_START = 206, "Device Start"
+    DOOR_OPEN_BY_SUPERUSER = 208, "Door Opened by Superuser"
     AUX_INPUT_DISCONNECT = 220, "Auxiliary Input Disconnected"
     AUX_INPUT_SHORT = 221, "Auxiliary Input Shorted"
     DOOR_ALARM_STATUS = 255, "Current door and alarm status"
@@ -133,7 +138,7 @@ class AlarmStatus(_IntEnumWithDescription):
     DOOR_OPEN_TIMEOUT = 2, "Door opening timeout"
 
 
-class DssStatus(_IntEnumWithDescription):
+class DoorSensorStatus(_IntEnumWithDescription):
     UNKNOWN = 0, "No Door Status Sensor"
     CLOSED = 1,  "Door closed"
     OPEN = 2,    "Door open"

@@ -82,9 +82,9 @@ class DoorAlarmStatusRecord(RTLogRecord):
     def door_is_open(self, door_nr: int):
         is_open = None
 
-        if self.dss_status[door_nr-1] == consts.DssStatus.OPEN:
+        if (self.dss_status[door_nr-1] & 0x0F) == consts.DoorSensorStatus.OPEN:
             is_open = True
-        elif self.dss_status[door_nr-1] == consts.DssStatus.CLOSED:
+        elif (self.dss_status[door_nr-1] & 0x0F) == consts.DoorSensorStatus.CLOSED:
             is_open = False
 
         return is_open
@@ -105,7 +105,7 @@ class DoorAlarmStatusRecord(RTLogRecord):
         repr_arr.append("%-12s %-10s" % ("dss_status", self.dss_status.hex(" ")))
         for i in range(0, 4):
             repr_arr.append("    Door %-2s %-4s %s" % (i+1, self.dss_status[i],
-                                                       repr(consts.DssStatus(self.dss_status[i]))))
+                                                       repr(consts.DoorSensorStatus(self.dss_status[i] & 0x0F))))
 
         return "\r\n".join(repr_arr)
 
