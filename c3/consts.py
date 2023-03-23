@@ -142,7 +142,5 @@ class DoorSensorStatus(_IntEnumWithDescription):
     UNKNOWN = 0, "No Door Status Sensor"
     CLOSED = 1,  "Door closed"
     OPEN = 2,    "Door open"
-    WHAT1 = 16,   "What is 0x10??"
-    WHAT2 = 17,   "What is 0x11??"
 
 
