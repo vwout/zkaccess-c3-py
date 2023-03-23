@@ -34,7 +34,7 @@ def test_c3_rtlog_decode_status1():
     assert record.has_alarm(1, 1)
     assert record.has_alarm(1, 2)
     # assert not record.has_alarm(1, 3)
-    assert None is record.door_is_open(1)
+    assert False is record.door_is_open(1)
     assert None is record.door_is_open(3)
     assert record.is_door_alarm()
     assert not record.is_event()
