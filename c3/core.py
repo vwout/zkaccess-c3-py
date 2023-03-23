@@ -16,8 +16,11 @@ class C3:
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2)
         self._connected = False
-        self.session_id: int = 0
-        self.request_nr: int = 0
+        self._session_id: int = 0
+        self._request_nr: int = 0
+        self._nr_of_locks = 0
+        self._nr_aux_in = 0
+        self._nr_aux_out = 0
 
     @classmethod
     def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
@@ -33,7 +36,6 @@ class C3:
 
     @classmethod
     def _get_message(cls, data: [bytes or bytearray]) -> bytearray:
-        message = bytearray()
         if data[-1] == consts.C3_MESSAGE_END:
             # Get the message payload, without start, crc and end bytes
             checksum = crc.crc16(data[1:-3])
@@ -48,16 +50,18 @@ class C3:
 
         return message
 
-    def _send(self, command: consts.CommandStruct, data=None) -> int:
-        message_length = 0x04 + len(data or [])
+    @classmethod
+    def _construct_message(cls, session_id: int, request_nr: int, command: consts.CommandStruct, data=None) -> bytes:
+        message_length = len(data or []) + (4 if (session_id and request_nr) else 0)
         message = bytearray([consts.C3_PROTOCOL_VERSION,
                              command.request or 0x00,
                              utils.lsb(message_length),
-                             utils.msb(message_length),
-                             utils.lsb(self.session_id or 0),
-                             utils.msb(self.session_id or 0),
-                             utils.lsb(self.request_nr),
-                             utils.msb(self.request_nr)])
+                             utils.msb(message_length)])
+        if session_id and request_nr:
+            message.append(utils.lsb(session_id))
+            message.append(utils.msb(session_id))
+            message.append(utils.lsb(request_nr))
+            message.append(utils.msb(request_nr))
 
         if data:
             for byte in data:
@@ -74,11 +78,15 @@ class C3:
 
         message.insert(0, consts.C3_MESSAGE_START)
         message.append(consts.C3_MESSAGE_END)
+        return message
+
+    def _send(self, command: consts.CommandStruct, data=None) -> int:
+        message = self._construct_message(self._session_id or 0, self._request_nr or 0, command, data)
 
         self.log.debug("Sending: %s", message.hex(' ', 1))
 
         bytes_written = self._sock.send(message)
-        self.request_nr = self.request_nr + 1
+        self._request_nr = self._request_nr + 1
         return bytes_written
 
     def _receive(self, expected_command: consts.CommandStruct) -> tuple[bytearray, int]:
@@ -113,7 +121,7 @@ class C3:
             if bytes_received > 2:
                 session_id = (receive_data[1] << 8) + receive_data[0]
                 # msg_seq = (receive_data[3] << 8) + receive_data[2]
-                if self.session_id != session_id:
+                if self._session_id != session_id:
                     raise ValueError("Data received with invalid session ID")
 
         return receive_data[4:], bytes_received-4
@@ -132,29 +140,36 @@ class C3:
         #    return False
         return self._connected
 
+    @classmethod
+    def _parse_kv_from_message(cls, message: bytes) -> dict:
+        kv = {}
+
+        message_str = message.decode(encoding='ascii', errors='ignore')
+        pattern = re.compile(r"([\w~]+)=([^,]+)")
+        for (k, v) in re.findall(pattern, message_str):
+            kv[k] = v
+
+        return kv
+
     def log_level(self, level: int):
         self.log.setLevel(level)
 
+    @property
+    def nr_of_locks(self) -> int:
+        return self._nr_of_locks
+
+    @property
+    def nr_aux_in(self) -> int:
+        return self._nr_aux_in
+
+    @property
+    def nr_aux_out(self) -> int:
+        return self._nr_aux_out
+
     @classmethod
-    def discover(cls, interface_address: str = None, timeout: int = 2):
+    def discover(cls, interface_address: str = None, timeout: int = 2) -> list[dict]:
         devices = []
-
-        data = consts.C3_DISCOVERY_MESSAGE
-        message_length = len(data)
-        message = bytearray([consts.C3_PROTOCOL_VERSION,
-                             consts.C3_COMMAND_DISCOVER.request or 0x00,
-                             utils.lsb(message_length),
-                             utils.msb(message_length)])
-
-        for byte in data:
-            message.append(ord(byte))
-
-        checksum = crc.crc16(message)
-        message.append(utils.lsb(checksum))
-        message.append(utils.msb(checksum))
-
-        message.insert(0, consts.C3_MESSAGE_START)
-        message.append(consts.C3_MESSAGE_END)
+        message = cls._construct_message(None, None, consts.C3_COMMAND_DISCOVER, consts.C3_DISCOVERY_MESSAGE)
 
         if interface_address:
             ips = [interface_address]
@@ -176,8 +191,6 @@ class C3:
                     break
 
                 if payload:
-                    parameter_values = {}
-
                     received_command, data_size = cls._get_message_header(payload)
                     if received_command == consts.C3_COMMAND_DISCOVER.reply:
                         # Get the message data and signature
@@ -187,28 +200,29 @@ class C3:
                             raise ValueError(
                                 "Length of received message (%d) does not match specified size (%d)" % (len(message),
                                                                                                         data_size))
-                        message_str = message.decode(encoding='ascii', errors='ignore')
-                        pattern = re.compile(r"([\w~]+)=([^,]+)")
-                        for (k, v) in re.findall(pattern, message_str):
-                            parameter_values[k] = v
-
-                        devices.append(parameter_values)
+                        devices.append(cls._parse_kv_from_message(message))
             sock.close()
 
         return devices
 
     def connect(self, host: str, port: int = consts.C3_PORT_DEFAULT) -> bool:
         self._connected = False
-        self.session_id = 0
+        self._session_id = 0
 
         self._sock.connect((host, port))
         bytes_written = self._send(consts.C3_COMMAND_CONNECT)
         if bytes_written > 0:
             receive_data, bytes_received = self._receive(consts.C3_COMMAND_CONNECT)
             if bytes_received > 2:
-                self.session_id = (receive_data[1] << 8) + receive_data[0]
-                self.log.debug("Connected with Session ID %x", self.session_id)
+                self._session_id = (receive_data[1] << 8) + receive_data[0]
+                self.log.debug("Connected with Session ID %x", self._session_id)
                 self._connected = True
+
+        if self._connected:
+            params = self.get_device_param(["LockCount", "AuxInCount", "AuxOutCount"])
+            self._nr_of_locks = int(params.get("LockCount", self._nr_of_locks))
+            self._nr_aux_in = int(params.get("AuxInCount", self._nr_aux_in))
+            self._nr_aux_out = int(params.get("AuxOutCount", self._nr_aux_out))
 
         return self._connected
 
@@ -217,17 +231,13 @@ class C3:
         self._sock.close()
 
         self._connected = False
-        self.session_id = 0
-        self.request_nr = 0
+        self._session_id = 0
+        self._request_nr = 0
 
     def get_device_param(self, request_parameters: list[str]) -> dict:
-        parameter_values = {}
         if self._is_connected():
             message, _ = self._send_receive(consts.C3_COMMAND_GETPARAM, ','.join(request_parameters))
-            message_str = message.decode(encoding='ascii', errors='ignore')
-            pattern = re.compile(r"([\w~]+)=(\w+)")
-            for (k, v) in re.findall(pattern, message_str):
-                parameter_values[k] = v
+            parameter_values = self._parse_kv_from_message(message)
         else:
             raise ConnectionError("No connection to C3 panel.")
 
