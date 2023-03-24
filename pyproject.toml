@@ -1,5 +1,5 @@
 [project]
-name = "c3"
+name = "zkaccess-c3"
 version = "0.0.1"
 description = "A native Python library for communicating with the ZKAccess C3 Access Control Panels."
 authors = [
