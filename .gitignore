@@ -68,3 +68,4 @@ desktop.ini
 # mypy
 /.mypy_cache/*
 /.dmypy.json
+__pycache__

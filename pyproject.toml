@@ -3,13 +3,22 @@ name = "c3"
 version = "0.0.1"
 description = "A native Python library for communicating with the ZKAccess C3 Access Control Panels."
 authors = [
-    {name = "Vwout"},
+    {name = "Vwout", email="vwout@users.noreply.github.com"},
 ]
-license = "GPL-3.0-or-later"
+#license = "GPL-3.0-or-later"
 readme = "readme.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/vwout/zkaccess-c3-py"
+"Bug Tracker" = "https://github.com/vwout/zkaccess-c3-py/issues"
 
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools>=61.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
