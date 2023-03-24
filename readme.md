@@ -1,8 +1,8 @@
 # c3
-A native Python library for communicating with the ZKAccess C3 Access Control Panels.
+A native Python library for communicating with the ZKTeco ZKAccess C3 Access Control Panels.
 
 This library intends to implement the same functionality as provided by the ZKAccess C3 PullSDK API, but using native Python only.
-It is a port of my (C3 Lua library)[../zkaccess-c3-lua]
+It is a port and extension of my (C3 Lua library)[../zkaccess-c3-lua].
 
 ## Usage
 To use the library, import the main class:
