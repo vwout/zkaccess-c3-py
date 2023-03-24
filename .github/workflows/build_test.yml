@@ -2,6 +2,9 @@ name: Build and test Python package
 
 on: [push]
 
+env:
+  PYTHONPATH: "."
+
 jobs:
   build:
 
