@@ -4,6 +4,7 @@
 # pytest
 .pytest_cache
 .cache
+__pycache__
 
 # Packages
 *.egg
@@ -68,4 +69,4 @@ desktop.ini
 # mypy
 /.mypy_cache/*
 /.dmypy.json
-__pycache__
+/.pypirc
