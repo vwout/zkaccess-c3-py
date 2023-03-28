@@ -12,11 +12,11 @@ def main():
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
-    panel = C3()
+    panel = C3(args.host)
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
 
-    if panel.connect(args.host):
+    if panel.connect():
         panel.control_device(controldevice.ControlDeviceCancelAlarms())
 
     panel.disconnect()

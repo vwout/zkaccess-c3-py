@@ -23,11 +23,11 @@ def main():
         duration = args.duration or 255  # Use default open when no duration is specified
 
     print("Connecting to %s" % args.host)
-    panel = C3()
+    panel = C3(args.host)
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
 
-    if panel.connect(args.host):
+    if panel.connect():
         operation = controldevice.ControlDeviceOutput(args.number,
                                                       consts.ControlOutputAddress.AUX_OUTPUT if args.output == 'aux'
                                                       else consts.ControlOutputAddress.DOOR_OUTPUT, duration)

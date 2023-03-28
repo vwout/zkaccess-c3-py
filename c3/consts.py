@@ -3,6 +3,7 @@ from collections import namedtuple
 
 # Defaults
 C3_PORT_DEFAULT = 4370
+C3_PORT_BROADCAST = 65535
 
 # Protocol commands
 C3_MESSAGE_START = 0xAA

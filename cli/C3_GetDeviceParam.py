@@ -12,11 +12,14 @@ def main():
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
-    panel = C3()
+    panel = C3(args.host)
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
 
-    if panel.connect(args.host):
+    if panel.connect():
+        print("Device:")
+        print(repr(panel))
+
         params = panel.get_device_param(["~ZKFPVersion",
                                          "~SerialNumber",
                                          "LockCount",

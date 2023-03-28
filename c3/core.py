@@ -1,3 +1,4 @@
+from __future__ import annotations
 import re
 import socket
 import logging
@@ -12,7 +13,8 @@ class C3:
     log = logging.getLogger("C3")
     log.setLevel(logging.ERROR)
 
-    def __init__(self):
+    def __init__(self, host: str, port: int = None, mac: str = None, sn: str = None, device: str = None,
+                 firmware_version: str = None):
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2)
         self._connected = False
@@ -21,6 +23,12 @@ class C3:
         self._nr_of_locks = 0
         self._nr_aux_in = 0
         self._nr_aux_out = 0
+        self._host = host
+        self._port = port or consts.C3_PORT_DEFAULT
+        self._mac = mac
+        self._sn = sn
+        self._device = device
+        self._firmware_version = firmware_version
 
     @classmethod
     def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
@@ -151,8 +159,53 @@ class C3:
 
         return kv
 
+    def __repr__(self):
+        return "\r\n".join([
+            f"- Host: {self._host} @ {self._port}",
+            f"- Device: {self._device or '?'} (sn: {self._sn or '?'})",
+            f"- Firmware version: {self._firmware_version or '?'}"
+        ])
+
     def log_level(self, level: int):
         self.log.setLevel(level)
+
+    @property
+    def host(self) -> str:
+        return self._host
+
+    @host.setter
+    def host(self, host: str):
+        if not self._is_connected():
+            self._host = host
+        else:
+            raise ConnectionError("Cannot set host when C3 is connected. Disconnect first.")
+
+    @property
+    def port(self) -> int:
+        return self._port
+
+    @port.setter
+    def port(self, port: int):
+        if not self._is_connected():
+            self._port = port
+        else:
+            raise ConnectionError("Cannot set port when C3 is connected. Disconnect first.")
+
+    @property
+    def mac(self) -> str:
+        return self._mac
+
+    @property
+    def sn(self) -> str:
+        return self._sn
+
+    @property
+    def device(self) -> str:
+        return self._device
+
+    @property
+    def firmware_version(self) -> str:
+        return self._firmware_version
 
     @property
     def nr_of_locks(self) -> int:
@@ -167,7 +220,7 @@ class C3:
         return self._nr_aux_out
 
     @classmethod
-    def discover(cls, interface_address: str = None, timeout: int = 2) -> list[dict]:
+    def discover(cls, interface_address: str = None, timeout: int = 2) -> list[C3]:
         devices = []
         message = cls._construct_message(None, None, consts.C3_COMMAND_DISCOVER, consts.C3_DISCOVERY_MESSAGE)
 
@@ -182,7 +235,7 @@ class C3:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             sock.settimeout(timeout)
             sock.bind((ip, 0))
-            sock.sendto(message, ("255.255.255.255", 65535))
+            sock.sendto(message, ("255.255.255.255", consts.C3_PORT_BROADCAST))
 
             while True:
                 try:
@@ -200,16 +253,23 @@ class C3:
                             raise ValueError(
                                 "Length of received message (%d) does not match specified size (%d)" % (len(message),
                                                                                                         data_size))
-                        devices.append(cls._parse_kv_from_message(message))
+                        data = cls._parse_kv_from_message(message)
+                        devices.append(C3(
+                            host=data.get("IP"),
+                            mac=data.get("MAC"),
+                            sn=data.get("SN"),
+                            device=data.get("Device"),
+                            firmware_version=data.get("Ver")
+                        ))
             sock.close()
 
         return devices
 
-    def connect(self, host: str, port: int = consts.C3_PORT_DEFAULT) -> bool:
+    def connect(self) -> bool:
         self._connected = False
         self._session_id = 0
 
-        self._sock.connect((host, port))
+        self._sock.connect((self._host, self._port))
         bytes_written = self._send(consts.C3_COMMAND_CONNECT)
         if bytes_written > 0:
             receive_data, bytes_received = self._receive(consts.C3_COMMAND_CONNECT)
@@ -219,7 +279,8 @@ class C3:
                 self._connected = True
 
         if self._connected:
-            params = self.get_device_param(["LockCount", "AuxInCount", "AuxOutCount"])
+            params = self.get_device_param(["~SerialNumber", "LockCount", "AuxInCount", "AuxOutCount"])
+            self._sn = int(params.get("~SerialNumber", self._sn))
             self._nr_of_locks = int(params.get("LockCount", self._nr_of_locks))
             self._nr_aux_in = int(params.get("AuxInCount", self._nr_aux_in))
             self._nr_aux_out = int(params.get("AuxOutCount", self._nr_aux_out))

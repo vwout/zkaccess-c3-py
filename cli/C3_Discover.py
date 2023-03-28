@@ -14,9 +14,8 @@ def main():
     C3.log.setLevel(logging.DEBUG)
     devices = C3.discover(args.interface)
     for device in devices:
-        print("Found device:")
-        for k in device:
-            print("- %s: %s" % (k, device.get(k)))
+        print(f"Found device ({device.mac or '?'}):")
+        print(repr(device))
 
 
 if __name__ == "__main__":
