@@ -221,6 +221,7 @@ class C3:
 
     @classmethod
     def discover(cls, interface_address: str = None, timeout: int = 2) -> list[C3]:
+        """Scan on all local network interface, or the provided interface, for C3 panels."""
         devices = []
         message = cls._construct_message(None, None, consts.C3_COMMAND_DISCOVER, consts.C3_DISCOVERY_MESSAGE)
 
@@ -266,6 +267,7 @@ class C3:
         return devices
 
     def connect(self) -> bool:
+        """Connect to the C3 panel on the host/port provided in the constructor."""
         self._connected = False
         self._session_id = 0
 
@@ -288,6 +290,7 @@ class C3:
         return self._connected
 
     def disconnect(self):
+        """Disconnect from C3 panel and end session."""
         self._send_receive(consts.C3_COMMAND_DISCONNECT)
         self._sock.close()
 
@@ -296,6 +299,7 @@ class C3:
         self._request_nr = 0
 
     def get_device_param(self, request_parameters: list[str]) -> dict:
+        """Retrieve the requested device parameter values."""
         if self._is_connected():
             message, _ = self._send_receive(consts.C3_COMMAND_GETPARAM, ','.join(request_parameters))
             parameter_values = self._parse_kv_from_message(message)
@@ -305,6 +309,7 @@ class C3:
         return parameter_values
 
     def get_rt_log(self) -> list[rtlog.RTLogRecord]:
+        """Retrieve the latest event or alarm records."""
         records = []
 
         if self._is_connected():
@@ -328,6 +333,7 @@ class C3:
         return records
 
     def control_device(self, control_command: controldevice.ControlDeviceBase):
+        """Send a control command to the panel."""
         if self._is_connected():
             self._send_receive(consts.C3_COMMAND_CONTROL, control_command.to_bytes())
         else:
