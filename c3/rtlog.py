@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from c3 import consts
 from c3.utils import C3DateTime
@@ -94,7 +95,7 @@ class DoorAlarmStatusRecord(RTLogRecord):
                     "%-12s %-10s" % ("time_second", self.time_second),
                     "%-12s %-10s %s" % ("event_type", self.event_type, repr(self.event_type)),
                     "%-12s %-10s %s" % ("verified", self.verified, repr(self.verified)),
-                    "%-12s %-10s" % ("alarm_status", self.alarm_status.hex(" "))]
+                    "%-12s %-10s" % ("alarm_status", self.alarm_status.hex())]
 
         for i in range(0, 4):
             for status in consts.AlarmStatus:
@@ -102,7 +103,7 @@ class DoorAlarmStatusRecord(RTLogRecord):
                     if self.alarm_status[i] & status == status:
                         repr_arr.append("    Door %-2s %-4s %s" % (i, status, repr(status)))
 
-        repr_arr.append("%-12s %-10s" % ("dss_status", self.dss_status.hex(" ")))
+        repr_arr.append("%-12s %-10s" % ("dss_status", self.dss_status.hex()))
         for i in range(0, 4):
             repr_arr.append("    Door %-2s %-4s %s" % (i+1, self.dss_status[i],
                                                        repr(consts.DoorSensorStatus(self.dss_status[i] & 0x0F))))

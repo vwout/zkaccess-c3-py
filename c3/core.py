@@ -91,7 +91,7 @@ class C3:
     def _send(self, command: consts.CommandStruct, data=None) -> int:
         message = self._construct_message(self._session_id or 0, self._request_nr or 0, command, data)
 
-        self.log.debug("Sending: %s", message.hex(' ', 1))
+        self.log.debug("Sending: %s", message.hex())
 
         bytes_written = self._sock.send(message)
         self._request_nr = self._request_nr + 1
@@ -102,13 +102,13 @@ class C3:
 
         # Get the first 5 bytes
         header = self._sock.recv(5)
-        self.log.debug("Receiving header: %s", header.hex(' ', 1))
+        self.log.debug("Receiving header: %s", header.hex())
 
         received_command, data_size = self._get_message_header(header)
         if received_command == expected_command.reply:
             # Get the message data and signature
             payload = self._sock.recv(data_size + 3)
-            self.log.debug("Receiving payload: %s", payload.hex(' ', 1))
+            self.log.debug("Receiving payload: %s", payload.hex())
             message = self._get_message(header + payload)
 
             if len(message) != data_size:
@@ -320,7 +320,7 @@ class C3:
             if message_length % 16 == 0:
                 logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
                 for log_message in logs_messages:
-                    self.log.debug("Received RT Log: %s", log_message.hex(" "))
+                    self.log.debug("Received RT Log: %s", log_message.hex())
                     if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
                         records.append(rtlog.DoorAlarmStatusRecord.from_bytes(log_message))
                     else:
