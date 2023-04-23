@@ -19,6 +19,14 @@ C3_COMMAND_GETPARAM = CommandStruct(0x04, 0xC8)
 C3_COMMAND_DATATABLE_CFG = CommandStruct(0x06, 0xC8)
 C3_COMMAND_CONTROL = CommandStruct(0x05, 0xC8)
 C3_COMMAND_RTLOG = CommandStruct(0x0B, 0xC8)
+C3_REPLY_OK = 0xC8
+C3_REPLY_ERROR = 0xC9
+
+
+Errors = {
+    -13: "Command error: This command is not available",
+    -14: "The communication password is not correct",
+}
 
 
 @unique

@@ -10,6 +10,14 @@ def msb(data):
     return (data >> 8) & 0x00FF
 
 
+def byte_to_signed_int(byte, size=8):
+    """Two's complement conversion from byte to int"""
+    value = int(byte, 16) if isinstance(byte, str) else int(byte)
+    if value & (1 << (size - 1)):
+        value -= 1 << size
+    return value
+
+
 # Converts a C3 time byte array in Big-Endian encoding to a lua time struct
 # In the C3 protocol, the time is stored in seconds as a byte array
 #

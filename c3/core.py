@@ -1,7 +1,8 @@
 from __future__ import annotations
 import re
-import socket
 import logging
+import socket
+from typing import Optional
 from c3 import consts
 from c3 import crc
 from c3 import utils
@@ -97,23 +98,26 @@ class C3:
         self._request_nr = self._request_nr + 1
         return bytes_written
 
-    def _receive(self, expected_command: consts.CommandStruct) -> tuple[bytearray, int]:
-        message = bytearray()
-
+    def _receive(self) -> tuple[bytearray, int]:
         # Get the first 5 bytes
         header = self._sock.recv(5)
-        self.log.debug("Receiving header: %s", header.hex())
+        self.log.debug(f"Receiving header: {header.hex()}")
 
         received_command, data_size = self._get_message_header(header)
-        if received_command == expected_command.reply:
-            # Get the message data and signature
-            payload = self._sock.recv(data_size + 3)
-            self.log.debug("Receiving payload: %s", payload.hex())
-            message = self._get_message(header + payload)
+        # Get the message data and signature
+        payload = self._sock.recv(data_size + 3)
+        self.log.debug(f"Receiving payload: {payload.hex()}", )
+        message = self._get_message(header + payload)
 
-            if len(message) != data_size:
-                raise ValueError("Length of received message (%d) does not match specified size (%d)" % (len(message),
-                                                                                                         data_size))
+        if len(message) != data_size:
+            raise ValueError(f"Length of received message ({len(message)}) does not match specified size ({data_size})")
+
+        if received_command == consts.C3_REPLY_OK:
+            pass
+        elif received_command == consts.C3_REPLY_ERROR:
+            error = utils.byte_to_signed_int(message[-1])
+            raise ConnectionError(
+                f"Error {error} received in reply: {consts.Errors[error] if error in consts.Errors else 'Unknown'}")
         else:
             data_size = 0
 
@@ -125,7 +129,7 @@ class C3:
 
         bytes_written = self._send(command, data)
         if bytes_written > 0:
-            receive_data, bytes_received = self._receive(command)
+            receive_data, bytes_received = self._receive()
             if bytes_received > 2:
                 session_id = (receive_data[1] << 8) + receive_data[0]
                 # msg_seq = (receive_data[3] << 8) + receive_data[2]
@@ -274,7 +278,7 @@ class C3:
         self._sock.connect((self._host, self._port))
         bytes_written = self._send(consts.C3_COMMAND_CONNECT)
         if bytes_written > 0:
-            receive_data, bytes_received = self._receive(consts.C3_COMMAND_CONNECT)
+            receive_data, bytes_received = self._receive()
             if bytes_received > 2:
                 self._session_id = (receive_data[1] << 8) + receive_data[0]
                 self.log.debug("Connected with Session ID %x", self._session_id)
