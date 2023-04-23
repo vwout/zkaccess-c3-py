@@ -60,7 +60,8 @@ class C3:
         return message
 
     @classmethod
-    def _construct_message(cls, session_id: int, request_nr: int, command: consts.CommandStruct, data=None) -> bytes:
+    def _construct_message(cls, session_id: Optional[int], request_nr: Optional[int], command: consts.CommandStruct,
+                           data=None) -> bytes:
         message_length = len(data or []) + (4 if (session_id and request_nr) else 0)
         message = bytearray([consts.C3_PROTOCOL_VERSION,
                              command.request or 0x00,
@@ -165,9 +166,9 @@ class C3:
 
     def __repr__(self):
         return "\r\n".join([
-            f"- Host: {self._host} @ {self._port}",
-            f"- Device: {self._device or '?'} (sn: {self._sn or '?'})",
-            f"- Firmware version: {self._firmware_version or '?'}"
+            f"- Host: {self.host} @ {self.port}",
+            f"- Device: {self.device} (sn: {self.sn})",
+            f"- Firmware version: {self.firmware_version}"
         ])
 
     def log_level(self, level: int):
@@ -197,31 +198,31 @@ class C3:
 
     @property
     def mac(self) -> str:
-        return self._mac
+        return self._mac or '?'
 
     @property
     def sn(self) -> str:
-        return self._sn
+        return self._sn or '?'
 
     @property
     def device(self) -> str:
-        return self._device
+        return self._device or '?'
 
     @property
     def firmware_version(self) -> str:
-        return self._firmware_version
+        return self._firmware_version or '?'
 
     @property
     def nr_of_locks(self) -> int:
-        return self._nr_of_locks
+        return self._nr_of_locks or 0
 
     @property
     def nr_aux_in(self) -> int:
-        return self._nr_aux_in
+        return self._nr_aux_in or 0
 
     @property
     def nr_aux_out(self) -> int:
-        return self._nr_aux_out
+        return self._nr_aux_out or 0
 
     @classmethod
     def discover(cls, interface_address: str = None, timeout: int = 2) -> list[C3]:
