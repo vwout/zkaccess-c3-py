@@ -11,14 +11,18 @@ C3_MESSAGE_END = 0x55
 C3_PROTOCOL_VERSION = 0x01
 C3_DISCOVERY_MESSAGE = "CallSecurityDevice"
 
-CommandStruct = namedtuple("Command", "request reply")
-C3_COMMAND_DISCOVER = CommandStruct(0x14, 0xC8)
-C3_COMMAND_CONNECT = CommandStruct(0x76, 0xC8)
-C3_COMMAND_DISCONNECT = CommandStruct(0x02, 0xC8)
-C3_COMMAND_GETPARAM = CommandStruct(0x04, 0xC8)
-C3_COMMAND_DATATABLE_CFG = CommandStruct(0x06, 0xC8)
-C3_COMMAND_CONTROL = CommandStruct(0x05, 0xC8)
-C3_COMMAND_RTLOG = CommandStruct(0x0B, 0xC8)
+
+class Command(IntEnum):
+    """Enumeration of supported device interaction commands"""
+    DISCOVER = 0x14,
+    CONNECT = 0x76,
+    DISCONNECT = 0x02,
+    GETPARAM = 0x04,
+    DATATABLE_CFG = 0x06,
+    CONTROL = 0x05,
+    RTLOG = 0x0B,
+
+
 C3_REPLY_OK = 0xC8
 C3_REPLY_ERROR = 0xC9
 

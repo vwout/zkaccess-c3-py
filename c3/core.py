@@ -60,11 +60,11 @@ class C3:
         return message
 
     @classmethod
-    def _construct_message(cls, session_id: Optional[int], request_nr: Optional[int], command: consts.CommandStruct,
+    def _construct_message(cls, session_id: Optional[int], request_nr: Optional[int], command: consts.Command,
                            data=None) -> bytes:
         message_length = len(data or []) + (4 if (session_id and request_nr) else 0)
         message = bytearray([consts.C3_PROTOCOL_VERSION,
-                             command.request or 0x00,
+                             command or 0x00,
                              utils.lsb(message_length),
                              utils.msb(message_length)])
         if session_id and request_nr:
@@ -90,7 +90,7 @@ class C3:
         message.append(consts.C3_MESSAGE_END)
         return message
 
-    def _send(self, command: consts.CommandStruct, data=None) -> int:
+    def _send(self, command: consts.Command, data=None) -> int:
         message = self._construct_message(self._session_id or 0, self._request_nr or 0, command, data)
 
         self.log.debug("Sending: %s", message.hex())
@@ -124,7 +124,7 @@ class C3:
 
         return message, data_size
 
-    def _send_receive(self, command: consts.CommandStruct, data=None) -> tuple[bytearray, int]:
+    def _send_receive(self, command: consts.Command, data=None) -> tuple[bytearray, int]:
         bytes_received = 0
         receive_data = bytearray()
 
@@ -228,7 +228,7 @@ class C3:
     def discover(cls, interface_address: str = None, timeout: int = 2) -> list[C3]:
         """Scan on all local network interface, or the provided interface, for C3 panels."""
         devices = []
-        message = cls._construct_message(None, None, consts.C3_COMMAND_DISCOVER, consts.C3_DISCOVERY_MESSAGE)
+        message = cls._construct_message(None, None, consts.Command.DISCOVER, consts.C3_DISCOVERY_MESSAGE)
 
         if interface_address:
             ips = [interface_address]
@@ -251,7 +251,7 @@ class C3:
 
                 if payload:
                     received_command, data_size = cls._get_message_header(payload)
-                    if received_command == consts.C3_COMMAND_DISCOVER.reply:
+                    if received_command == consts.C3_REPLY_OK:
                         # Get the message data and signature
                         message = cls._get_message(payload)
 
@@ -277,7 +277,7 @@ class C3:
         self._session_id = 0
 
         self._sock.connect((self._host, self._port))
-        bytes_written = self._send(consts.C3_COMMAND_CONNECT)
+        bytes_written = self._send(consts.Command.CONNECT)
         if bytes_written > 0:
             receive_data, bytes_received = self._receive()
             if bytes_received > 2:
@@ -296,7 +296,7 @@ class C3:
 
     def disconnect(self):
         """Disconnect from C3 panel and end session."""
-        self._send_receive(consts.C3_COMMAND_DISCONNECT)
+        self._send_receive(consts.Command.DISCONNECT)
         self._sock.close()
 
         self._connected = False
@@ -306,7 +306,7 @@ class C3:
     def get_device_param(self, request_parameters: list[str]) -> dict:
         """Retrieve the requested device parameter values."""
         if self._is_connected():
-            message, _ = self._send_receive(consts.C3_COMMAND_GETPARAM, ','.join(request_parameters))
+            message, _ = self._send_receive(consts.Command.GETPARAM, ','.join(request_parameters))
             parameter_values = self._parse_kv_from_message(message)
         else:
             raise ConnectionError("No connection to C3 panel.")
@@ -318,7 +318,7 @@ class C3:
         records = []
 
         if self._is_connected():
-            message, message_length = self._send_receive(consts.C3_COMMAND_RTLOG)
+            message, message_length = self._send_receive(consts.Command.RTLOG)
 
             # One RT log is 16 bytes
             # Ensure the array is not empty and a multiple of 16
@@ -340,6 +340,6 @@ class C3:
     def control_device(self, control_command: controldevice.ControlDeviceBase):
         """Send a control command to the panel."""
         if self._is_connected():
-            self._send_receive(consts.C3_COMMAND_CONTROL, control_command.to_bytes())
+            self._send_receive(consts.Command.CONTROL, control_command.to_bytes())
         else:
             raise ConnectionError("No connection to C3 panel.")

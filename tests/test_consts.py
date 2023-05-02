@@ -2,9 +2,10 @@ from c3.consts import *
 
 
 def test_commands():
-    connect = C3_COMMAND_CONNECT
-    assert 0x76 == connect.request
-    assert 0xC8 == connect.reply
+    connect_cmd = Command.CONNECT
+    assert 0x76 == connect_cmd
+    connect_reply = C3_REPLY_OK
+    assert 0xC8 == connect_reply
 
 
 def test_control_operation():
