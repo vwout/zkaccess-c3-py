@@ -16,10 +16,13 @@ def main():
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
 
-    if panel.connect():
-        panel.control_device(controldevice.ControlDeviceCancelAlarms())
-
-    panel.disconnect()
+    try:
+        if panel.connect():
+            panel.control_device(controldevice.ControlDeviceCancelAlarms())
+    except Exception as e:
+        print(f"Cancel alarms faied: {e}")
+    finally:
+        panel.disconnect()
 
 
 if __name__ == "__main__":

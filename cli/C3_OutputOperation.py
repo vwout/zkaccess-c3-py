@@ -27,13 +27,16 @@ def main():
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
 
-    if panel.connect():
-        operation = controldevice.ControlDeviceOutput(args.number,
-                                                      consts.ControlOutputAddress.AUX_OUTPUT if args.output == 'aux'
-                                                      else consts.ControlOutputAddress.DOOR_OUTPUT, duration)
-        panel.control_device(operation)
-
-    panel.disconnect()
+    try:
+        if panel.connect():
+            operation = controldevice.ControlDeviceOutput(args.number,
+                                                          consts.ControlOutputAddress.AUX_OUTPUT if args.output == 'aux'
+                                                          else consts.ControlOutputAddress.DOOR_OUTPUT, duration)
+            panel.control_device(operation)
+    except Exception as e:
+        print(f"Parameter retrieval failed: {e}")
+    finally:
+        panel.disconnect()
 
 
 if __name__ == "__main__":

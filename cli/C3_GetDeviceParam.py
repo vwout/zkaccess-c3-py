@@ -16,25 +16,28 @@ def main():
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
 
-    if panel.connect():
-        print("Device:")
-        print(repr(panel))
+    try:
+        if panel.connect():
+            print("Device:")
+            print(repr(panel))
 
-        params = panel.get_device_param(["~ZKFPVersion",
-                                         "~SerialNumber",
-                                         "LockCount",
-                                         "ReaderCount",
-                                         "AuxInCount",
-                                         "AuxOutCount",
-                                         "DateTime"])
+            params = panel.get_device_param(["~ZKFPVersion",
+                                             "~SerialNumber",
+                                             "LockCount",
+                                             "ReaderCount",
+                                             "AuxInCount",
+                                             "AuxOutCount",
+                                             "DateTime"])
 
-        for k in params:
-            if k == "DateTime":
-                print("- %s: %s" % (k, C3DateTime.from_value(int(params.get(k))).isoformat()))
-            else:
-                print("- %s: %s" % (k, params.get(k)))
-
-    panel.disconnect()
+            for k in params:
+                if k == "DateTime":
+                    print("- %s: %s" % (k, C3DateTime.from_value(int(params.get(k))).isoformat()))
+                else:
+                    print("- %s: %s" % (k, params.get(k)))
+    except Exception as e:
+        print(f"Parameter retrieval failed: {e}")
+    finally:
+        panel.disconnect()
 
 
 if __name__ == "__main__":

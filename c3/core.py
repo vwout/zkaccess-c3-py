@@ -276,14 +276,17 @@ class C3:
         self._connected = False
         self._session_id = 0
 
-        self._sock.connect((self._host, self._port))
-        bytes_written = self._send(consts.Command.CONNECT)
-        if bytes_written > 0:
-            receive_data, bytes_received = self._receive()
-            if bytes_received > 2:
-                self._session_id = (receive_data[1] << 8) + receive_data[0]
-                self.log.debug("Connected with Session ID %x", self._session_id)
-                self._connected = True
+        try:
+            self._sock.connect((self._host, self._port))
+            bytes_written = self._send(consts.Command.CONNECT)
+            if bytes_written > 0:
+                receive_data, bytes_received = self._receive()
+                if bytes_received > 2:
+                    self._session_id = (receive_data[1] << 8) + receive_data[0]
+                    self.log.debug("Connected with Session ID %x", self._session_id)
+                    self._connected = True
+        except Exception as e:
+            self.log.error(f"Connection to {self._host} failed: {e}")
 
         if self._connected:
             params = self.get_device_param(["~SerialNumber", "LockCount", "AuxInCount", "AuxOutCount"])
@@ -296,8 +299,9 @@ class C3:
 
     def disconnect(self):
         """Disconnect from C3 panel and end session."""
-        self._send_receive(consts.Command.DISCONNECT)
-        self._sock.close()
+        if self._is_connected():
+            self._send_receive(consts.Command.DISCONNECT)
+            self._sock.close()
 
         self._connected = False
         self._session_id = 0
