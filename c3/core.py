@@ -139,7 +139,7 @@ class C3:
 
         return receive_data[4:], bytes_received-4
 
-    def _is_connected(self) -> bool:
+    def is_connected(self) -> bool:
         # try:
         #    # this will try to read bytes without blocking and also without removing them from buffer (peek only)
         #    data = self._sock.recv(1, socket.MSG_DONTWAIT | socket.MSG_PEEK)
@@ -180,7 +180,7 @@ class C3:
 
     @host.setter
     def host(self, host: str):
-        if not self._is_connected():
+        if not self.is_connected():
             self._host = host
         else:
             raise ConnectionError("Cannot set host when C3 is connected. Disconnect first.")
@@ -191,7 +191,7 @@ class C3:
 
     @port.setter
     def port(self, port: int):
-        if not self._is_connected():
+        if not self.is_connected():
             self._port = port
         else:
             raise ConnectionError("Cannot set port when C3 is connected. Disconnect first.")
@@ -299,7 +299,7 @@ class C3:
 
     def disconnect(self):
         """Disconnect from C3 panel and end session."""
-        if self._is_connected():
+        if self.is_connected():
             self._send_receive(consts.Command.DISCONNECT)
             self._sock.close()
 
@@ -309,7 +309,7 @@ class C3:
 
     def get_device_param(self, request_parameters: list[str]) -> dict:
         """Retrieve the requested device parameter values."""
-        if self._is_connected():
+        if self.is_connected():
             message, _ = self._send_receive(consts.Command.GETPARAM, ','.join(request_parameters))
             parameter_values = self._parse_kv_from_message(message)
         else:
@@ -321,7 +321,7 @@ class C3:
         """Retrieve the latest event or alarm records."""
         records = []
 
-        if self._is_connected():
+        if self.is_connected():
             message, message_length = self._send_receive(consts.Command.RTLOG)
 
             # One RT log is 16 bytes
@@ -343,7 +343,7 @@ class C3:
 
     def control_device(self, control_command: controldevice.ControlDeviceBase):
         """Send a control command to the panel."""
-        if self._is_connected():
+        if self.is_connected():
             self._send_receive(consts.Command.CONTROL, control_command.to_bytes())
         else:
             raise ConnectionError("No connection to C3 panel.")
