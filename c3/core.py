@@ -289,11 +289,14 @@ class C3:
             self.log.error(f"Connection to {self._host} failed: {e}")
 
         if self._connected:
-            params = self.get_device_param(["~SerialNumber", "LockCount", "AuxInCount", "AuxOutCount"])
-            self._sn = int(params.get("~SerialNumber", self._sn))
-            self._nr_of_locks = int(params.get("LockCount", self._nr_of_locks))
-            self._nr_aux_in = int(params.get("AuxInCount", self._nr_aux_in))
-            self._nr_aux_out = int(params.get("AuxOutCount", self._nr_aux_out))
+            try:
+                params = self.get_device_param(["~SerialNumber", "LockCount", "AuxInCount", "AuxOutCount"])
+                self._sn = int(params.get("~SerialNumber", self._sn))
+                self._nr_of_locks = int(params.get("LockCount", self._nr_of_locks))
+                self._nr_aux_in = int(params.get("AuxInCount", self._nr_aux_in))
+                self._nr_aux_out = int(params.get("AuxOutCount", self._nr_aux_out))
+            except Exception as e:
+                self.log.error(f"Retrieving configuration parameters from {self._host} failed: {e}")
 
         return self._connected
 
