@@ -15,3 +15,8 @@ def test_control_operation():
     assert "Cancel alarm" == cancel_alarm.description
     assert "2" == "%s" % cancel_alarm
     assert "Cancel alarm" == "%r" % cancel_alarm
+
+
+def test_door_sensor_status():
+    assert DoorSensorStatus.UNKNOWN == DoorSensorStatus(0)
+    assert DoorSensorStatus.CLOSED == DoorSensorStatus(1)

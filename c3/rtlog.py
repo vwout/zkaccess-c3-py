@@ -80,12 +80,15 @@ class DoorAlarmStatusRecord(RTLogRecord):
         return ((self.alarm_status[door_nr-1] & (status or 0)) == status) or \
                ((self.alarm_status[door_nr-1] > 0) and status is None)
 
+    def door_sensor_status(self, door_nr: int) -> consts.DoorSensorStatus:
+        return consts.DoorSensorStatus(self.dss_status[door_nr-1] & 0x0F)
+
     def door_is_open(self, door_nr: int):
         is_open = None
 
-        if (self.dss_status[door_nr-1] & 0x0F) == consts.DoorSensorStatus.OPEN:
+        if self.door_sensor_status(door_nr) == consts.DoorSensorStatus.OPEN:
             is_open = True
-        elif (self.dss_status[door_nr-1] & 0x0F) == consts.DoorSensorStatus.CLOSED:
+        elif self.door_sensor_status(door_nr) == consts.DoorSensorStatus.CLOSED:
             is_open = False
 
         return is_open
