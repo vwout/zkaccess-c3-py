@@ -139,7 +139,7 @@ class EventType(_IntEnumWithDescription):
     DOOR_ALARM_STATUS = 255, "Current door and alarm status"
 
 
-class InOutStatus(_IntEnumWithDescription):
+class InOutDirection(_IntEnumWithDescription):
     ENTRY = 0, "Entry"
     EXIT = 3,  "Exit"
     NONE = 2,  "None"
@@ -151,9 +151,10 @@ class AlarmStatus(_IntEnumWithDescription):
     DOOR_OPEN_TIMEOUT = 2, "Door opening timeout"
 
 
-class DoorSensorStatus(_IntEnumWithDescription):
-    UNKNOWN = 0, "No Door Status Sensor"
-    CLOSED = 1,  "Door closed"
-    OPEN = 2,    "Door open"
+class InOutStatus(_IntEnumWithDescription):
+    UNKNOWN = 0, "Unknown"
+    CLOSED = 1,  "Closed"
+    OPEN = 2,    "Open"
+
 
 

@@ -80,15 +80,15 @@ class DoorAlarmStatusRecord(RTLogRecord):
         return ((self.alarm_status[door_nr-1] & (status or 0)) == status) or \
                ((self.alarm_status[door_nr-1] > 0) and status is None)
 
-    def door_sensor_status(self, door_nr: int) -> consts.DoorSensorStatus:
-        return consts.DoorSensorStatus(self.dss_status[door_nr-1] & 0x0F)
+    def door_sensor_status(self, door_nr: int) -> consts.InOutStatus:
+        return consts.InOutStatus(self.dss_status[door_nr - 1] & 0x0F)
 
     def door_is_open(self, door_nr: int):
         is_open = None
 
-        if self.door_sensor_status(door_nr) == consts.DoorSensorStatus.OPEN:
+        if self.door_sensor_status(door_nr) == consts.InOutStatus.OPEN:
             is_open = True
-        elif self.door_sensor_status(door_nr) == consts.DoorSensorStatus.CLOSED:
+        elif self.door_sensor_status(door_nr) == consts.InOutStatus.CLOSED:
             is_open = False
 
         return is_open
@@ -109,7 +109,7 @@ class DoorAlarmStatusRecord(RTLogRecord):
         repr_arr.append("%-12s %-10s" % ("dss_status", self.dss_status.hex()))
         for i in range(0, 4):
             repr_arr.append("    Door %-2s %-4s %s" % (i+1, self.dss_status[i],
-                                                       repr(consts.DoorSensorStatus(self.dss_status[i] & 0x0F))))
+                                                       repr(consts.InOutStatus(self.dss_status[i] & 0x0F))))
 
         return "\r\n".join(repr_arr)
 
@@ -140,7 +140,7 @@ class EventRecord(RTLogRecord):
         self.verified: consts.VerificationMode = consts.VerificationMode.NONE
         self.door_id = 0
         self.event_type: consts.EventType = consts.EventType.NA
-        self.in_out_state: consts.InOutStatus = consts.InOutStatus.NONE
+        self.in_out_state: consts.InOutDirection = consts.InOutDirection.NONE
         self.time_second = 0
 
     @classmethod
@@ -151,7 +151,7 @@ class EventRecord(RTLogRecord):
         record.verified = consts.VerificationMode(data[8])
         record.door_id = data[9]
         record.event_type = consts.EventType(data[10])
-        record.in_out_state = consts.InOutStatus(data[11])
+        record.in_out_state = consts.InOutDirection(data[11])
         record.time_second = C3DateTime.from_value(int.from_bytes(data[12:16], byteorder="little"))
         return record
 

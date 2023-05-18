@@ -18,5 +18,5 @@ def test_control_operation():
 
 
 def test_door_sensor_status():
-    assert DoorSensorStatus.UNKNOWN == DoorSensorStatus(0)
-    assert DoorSensorStatus.CLOSED == DoorSensorStatus(1)
+    assert InOutStatus.UNKNOWN == InOutStatus(0)
+    assert InOutStatus.CLOSED == InOutStatus(1)
