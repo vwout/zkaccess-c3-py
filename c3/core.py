@@ -2,7 +2,9 @@ from __future__ import annotations
 import re
 import logging
 import socket
-from typing import Optional
+from typing import Dict, Optional
+
+# import consts
 from c3 import consts
 from c3 import crc
 from c3 import utils
@@ -30,6 +32,9 @@ class C3:
         self._sn = sn
         self._device = device
         self._firmware_version = firmware_version
+        self._lock_status: Dict[consts.InOutStatus] = {}
+        self._aux_in_status: Dict[consts.InOutStatus] = {}
+        self._aux_out_status: Dict[consts.InOutStatus] = {}
 
     @classmethod
     def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
@@ -321,6 +326,21 @@ class C3:
 
         return parameter_values
 
+    def _update_inout_status(self, logs: list[rtlog.RTLogRecord]):
+        for log in logs:
+            if isinstance(log, rtlog.DoorAlarmStatusRecord):
+                for lock_nr in range(1, self._nr_of_locks+1):
+                    self._lock_status[lock_nr] = log.door_sensor_status(lock_nr)
+            elif isinstance(log, rtlog.EventRecord):
+                if log.event_type == consts.EventType.OPEN_AUX_OUTPUT:
+                    self._aux_out_status[log.door_id] = consts.InOutStatus.OPEN
+                elif log.event_type == consts.EventType.CLOSE_AUX_OUTPUT:
+                    self._aux_out_status[log.door_id] = consts.InOutStatus.CLOSED
+                elif log.event_type == consts.EventType.AUX_INPUT_DISCONNECT:
+                    self._aux_in_status[log.door_id] = consts.InOutStatus.OPEN
+                elif log.event_type == consts.EventType.AUX_INPUT_SHORT:
+                    self._aux_in_status[log.door_id] = consts.InOutStatus.CLOSED
+
     def get_rt_log(self) -> list[rtlog.RTLogRecord]:
         """Retrieve the latest event or alarm records."""
         records = []
@@ -343,6 +363,8 @@ class C3:
         else:
             raise ConnectionError("No connection to C3 panel.")
 
+        self._update_inout_status(records)
+
         return records
 
     def control_device(self, control_command: controldevice.ControlDeviceBase):
@@ -351,3 +373,18 @@ class C3:
             self._send_receive(consts.Command.CONTROL, control_command.to_bytes())
         else:
             raise ConnectionError("No connection to C3 panel.")
+
+    def lock_status(self, door_nr: int) -> consts.InOutStatus:
+        """Returns the (cached) door open/close status.
+        Requires a preceding call to get_rt_log to update to the latest status."""
+        return self._lock_status[door_nr] if door_nr in self._lock_status else consts.InOutStatus.UNKNOWN
+
+    def aux_in_status(self, aux_nr: int) -> consts.InOutStatus:
+        """Returns the (cached) auxiliary input short/disconnect status.
+        Requires a preceding call to get_rt_log to update to the latest status."""
+        return self._aux_in_status[aux_nr] if aux_nr in self._aux_in_status else consts.InOutStatus.UNKNOWN
+
+    def aux_out_status(self, aux_nr: int) -> consts.InOutStatus:
+        """Returns the (cached) auxiliary output open/close status.
+        Requires a preceding call to get_rt_log to update to the latest status."""
+        return self._aux_out_status[aux_nr] if aux_nr in self._aux_out_status else consts.InOutStatus.UNKNOWN
