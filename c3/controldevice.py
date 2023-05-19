@@ -64,13 +64,25 @@ class ControlDeviceOutput(ControlDeviceBase):
     def __init__(self, output_number: int, address: consts.ControlOutputAddress, duration: int):
         ControlDeviceBase.__init__(self, consts.ControlOperation.OUTPUT, output_number, address, duration)
 
+    @property
+    def output_number(self) -> int:
+        return self.param1
+
+    @property
+    def address(self) -> int:
+        return self.param2
+
+    @property
+    def duration(self) -> int:
+        return self.param3
+
     def __repr__(self):
         return "\r\n".join([
             "ControlDevice Output Operation:"
             "%-12s %-10s (%s)" % ("operation", self.operation, repr(self.operation)),
-            "%-12s %-10s (Door/Aux Number)" % ("param1", self.param1),
-            "%-12s %-10s %s" % ("param2", self.param2, repr(consts.ControlOutputAddress(self.param2))),
-            "%-12s %-10s (Duration)" % ("param3", self.param3),
+            "%-12s %-10s (Door/Aux Number)" % ("param1", self.output_number),
+            "%-12s %-10s %s" % ("param2", self.param2, repr(consts.ControlOutputAddress(self.address))),
+            "%-12s %-10s (Duration)" % ("param3", self.duration),
         ])
 
 
@@ -89,12 +101,20 @@ class ControlDeviceNormalOpenStateEnable(ControlDeviceBase):
     def __init__(self, door_number: int, enable: bool):
         ControlDeviceBase.__init__(self, consts.ControlOperation.ENDIS_NO_STATE, door_number, enable)
 
+    @property
+    def door_number(self) -> int:
+        return self.param1
+
+    @property
+    def enabled(self) -> bool:
+        return True if self.param2 else False
+
     def __repr__(self):
         return "\r\n".join([
             "ControlDevice Normal Open State Operation:"
             "%-12s %-10s (%s)" % ("operation", self.operation, repr(self.operation)),
-            "%-12s %-10s (Door Number)" % ("param1", self.param1),
-            "%-12s %-10s %s" % ("param2", self.param2, "Enable" if self.param2 else "Disable"),
+            "%-12s %-10s (Door Number)" % ("param1", self.door_number),
+            "%-12s %-10s %s" % ("param2", self.param2, "Enable" if self.enabled else "Disable"),
         ])
 
 
