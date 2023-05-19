@@ -53,7 +53,8 @@ class C3:
                 # Return all data without header (leading) and crc (trailing)
                 message = bytearray(data[5:-3])
             else:
-                raise ValueError("Payload checksum is invalid: %s expected %x" % (data[-3:-2].hex(), checksum))
+                raise ValueError("Payload checksum is invalid: %x%x expected %x%x" %
+                                 (data[-3], data[-2], utils.lsb(checksum), utils.msb(checksum)))
         else:
             raise ValueError("Payload does not include message end marker (%s)" % data[-1])
 
