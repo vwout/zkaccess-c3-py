@@ -2,6 +2,7 @@ from __future__ import annotations
 import re
 import logging
 import socket
+import threading
 from typing import Dict, Optional
 
 # import consts
@@ -367,10 +368,23 @@ class C3:
 
         return records
 
-    def control_device(self, control_command: controldevice.ControlDeviceBase):
+    def _auto_close_aux_out(self, aux_nr: int) -> None:
+        """Set the specified auxiliary output to closed.
+
+        The C3 does not send an event when an auxiliary output closes after a certain duration.
+        This function is trigger by an automatic internal timer to set the internal state to closed."""
+        self._aux_out_status[aux_nr] = consts.InOutStatus.CLOSED
+
+    def control_device(self, command: controldevice.ControlDeviceBase):
         """Send a control command to the panel."""
         if self.is_connected():
-            self._send_receive(consts.Command.CONTROL, control_command.to_bytes())
+            self._send_receive(consts.Command.CONTROL, command.to_bytes())
+
+            if isinstance(command, controldevice.ControlDeviceOutput):
+                if command.operation == consts.ControlOperation.OUTPUT and \
+                        command.address == consts.ControlOutputAddress.AUX_OUTPUT and \
+                        command.duration < 255:
+                    threading.Timer(command.duration, self._auto_close_aux_out, [command.output_number]).start()
         else:
             raise ConnectionError("No connection to C3 panel.")
 

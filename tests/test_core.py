@@ -1,8 +1,10 @@
 from unittest import mock
+import time
 
 from c3 import rtlog
 from c3.core import C3
 from c3 import consts
+from c3 import controldevice
 
 
 def test_core_init():
@@ -140,3 +142,36 @@ def test_core_aux_out_status():
         assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
         assert panel.aux_out_status(2) == consts.InOutStatus.CLOSED
 
+
+def test_core_aux_out_open_close():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
+                                                     bytes.fromhex("eb6600005c7f55"),
+                                                     bytes.fromhex("aa01c84600"),
+                                                     bytes.fromhex(
+             "eb6601007e53657269616c4e756d6265723d363430343136323130313638392c4c6f636b"
+             "436f756e743d322c417578496e436f756e743d322c4175784f7574436f756e743d326a2255")]
+
+        assert panel.connect() is True
+        assert panel.nr_aux_out == 2
+        assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_out_status(2) == consts.InOutStatus.UNKNOWN
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
+                                                     bytes.fromhex("eb6602005d1f55")]
+
+        command = controldevice.ControlDeviceOutput(2, consts.ControlOutputAddress.AUX_OUTPUT, 2)
+        panel.control_device(command)
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c81400"),
+                                                     bytes.fromhex("eb6643000000000000000000c8020c0229c4ca2cbb6255")]
+        panel.get_rt_log()
+        assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_out_status(2) == consts.InOutStatus.OPEN
+
+        time.sleep(2.1)
+
+        assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_out_status(2) == consts.InOutStatus.CLOSED
