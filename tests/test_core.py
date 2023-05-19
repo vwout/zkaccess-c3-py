@@ -65,3 +65,78 @@ def test_core_lock_status():
         assert panel.lock_status(2) == consts.InOutStatus.UNKNOWN
         assert panel.lock_status(3) == consts.InOutStatus.UNKNOWN
         assert panel.lock_status(4) == consts.InOutStatus.UNKNOWN
+
+
+def test_core_aux_in_status():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
+                                                     bytes.fromhex("eb6600005c7f55"),
+                                                     bytes.fromhex("aa01c84600"),
+                                                     bytes.fromhex(
+             "eb6601007e53657269616c4e756d6265723d363430343136323130313638392c4c6f636b"
+             "436f756e743d322c417578496e436f756e743d322c4175784f7574436f756e743d326a2255")]
+
+        assert panel.connect() is True
+        assert panel.nr_aux_in == 2
+        assert panel.aux_in_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_in_status(2) == consts.InOutStatus.UNKNOWN
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c81400"),
+                                                     bytes.fromhex("eb663c000000000000000000c802dd02f5c3ca2c0abe55")]
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert isinstance(logs[0], rtlog.EventRecord)
+        assert logs[0].door_id == 2
+        assert logs[0].event_type == consts.EventType.AUX_INPUT_SHORT
+        assert panel.aux_in_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_in_status(2) == consts.InOutStatus.CLOSED
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c81400"),
+                                                     bytes.fromhex("eb663e000000000000000000c802dc02f9c3ca2ca98755")]
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert isinstance(logs[0], rtlog.EventRecord)
+        assert logs[0].door_id == 2
+        assert logs[0].event_type == consts.EventType.AUX_INPUT_DISCONNECT
+        assert panel.aux_in_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_in_status(2) == consts.InOutStatus.OPEN
+
+
+def test_core_aux_out_status():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
+                                                     bytes.fromhex("eb6600005c7f55"),
+                                                     bytes.fromhex("aa01c84600"),
+                                                     bytes.fromhex(
+             "eb6601007e53657269616c4e756d6265723d363430343136323130313638392c4c6f636b"
+             "436f756e743d322c417578496e436f756e743d322c4175784f7574436f756e743d326a2255")]
+
+        assert panel.connect() is True
+        assert panel.nr_aux_out == 2
+        assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_out_status(2) == consts.InOutStatus.UNKNOWN
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c81400"),
+                                                     bytes.fromhex("eb6643000000000000000000c8020c0229c4ca2cbb6255")]
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert isinstance(logs[0], rtlog.EventRecord)
+        assert logs[0].door_id == 2
+        assert logs[0].event_type == consts.EventType.OPEN_AUX_OUTPUT
+        assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_out_status(2) == consts.InOutStatus.OPEN
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c81400"),
+                                                     bytes.fromhex("eb664c000000000000000000c8020d0271c4ca2c9ac455")]
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert isinstance(logs[0], rtlog.EventRecord)
+        assert logs[0].door_id == 2
+        assert logs[0].event_type == consts.EventType.CLOSE_AUX_OUTPUT
+        assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.aux_out_status(2) == consts.InOutStatus.CLOSED
+
