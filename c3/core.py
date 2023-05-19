@@ -18,7 +18,7 @@ class C3:
     log.setLevel(logging.ERROR)
 
     def __init__(self, host: str, port: int = None, mac: str = None, sn: str = None, device: str = None,
-                 firmware_version: str = None):
+                 firmware_version: str = None) -> None:
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2)
         self._connected = False
@@ -33,9 +33,9 @@ class C3:
         self._sn = sn
         self._device = device
         self._firmware_version = firmware_version
-        self._lock_status: Dict[consts.InOutStatus] = {}
-        self._aux_in_status: Dict[consts.InOutStatus] = {}
-        self._aux_out_status: Dict[consts.InOutStatus] = {}
+        self._lock_status: Dict[int, consts.InOutStatus] = {}
+        self._aux_in_status: Dict[int, consts.InOutStatus] = {}
+        self._aux_out_status: Dict[int, consts.InOutStatus] = {}
 
     @classmethod
     def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
