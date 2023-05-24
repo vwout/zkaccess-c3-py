@@ -1,7 +1,6 @@
 """ZKAccess C3 library"""
+from . import controldevice, rtlog
 from .core import C3
-from . import controldevice
-from . import rtlog
 
 VERSION = (0, 0, 1)
 

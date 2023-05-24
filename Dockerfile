@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir pytest \
                                pytest-cov \
                                build \
                                setuptools \
-                               twine
+                               twine \
+                               isort
 
 WORKDIR /github/workspace

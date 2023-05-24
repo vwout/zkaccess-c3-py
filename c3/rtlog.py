@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
+
 from c3 import consts
 from c3.utils import C3DateTime
 
@@ -14,31 +16,33 @@ class RTLogRecord(ABC):
         ...
 
 
-# An RTLog is a binary message of 16 bytes send by the C3 access panel.
-# If the value of byte 10 (the event type) is 255, the RTLog is a Door/Alarm Realtime Status.
-# If the value of byte 10 (the event type) is not 255, the RTLog is a Realtime Event.
-
-# Door/Alarm Realtime Status record
-# All multibyte values are stored as Little-endian.
-#
-# Byte:                    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-#                          01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
-# Alarm status (byte 4-7):             |
-#                                      99:92:98:00 => (big endian:) 00989299 = 9999001
-# DSS status (byte 0-3):   |
-#                          01:4f:86:00 => (big endian:) 00864f01 = 8802049
-# Verified (byte 8):                               |
-#                                                  04
-# Unused (byte 9):                                    |
-#                                                     01
-# EventType (byte 10):                                   |
-#                                                        00
-# Unused (byte 11):                                         |
-#                                                           00
-#                                                              |
-# Time_second (byte 12-15)                                     a5:ad:ad:21 => (big endian:) 21ADADA5 =
-#                                                                                           2017-7-30 16:51:49
 class DoorAlarmStatusRecord(RTLogRecord):
+    """Realtime Log record for a door and alarm status
+    An RTLog is a binary message of 16 bytes send by the C3 access panel.
+    If the value of byte 10 (the event type) is 255, the RTLog is a Door/Alarm Realtime Status.
+    If the value of byte 10 (the event type) is not 255, the RTLog is a Realtime Event.
+
+    Door/Alarm Realtime Status record
+    All multibyte values are stored as Little-endian.
+
+    Byte:                    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+                             01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
+    Alarm status (byte 4-7):             |
+                                         99:92:98:00 => (big endian:) 00989299 = 9999001
+    DSS status (byte 0-3):   |
+                             01:4f:86:00 => (big endian:) 00864f01 = 8802049
+    Verified (byte 8):                               |
+                                                     04
+    Unused (byte 9):                                    |
+                                                        01
+    EventType (byte 10):                                   |
+                                                           00
+    Unused (byte 11):                                         |
+                                                              00
+                                                                 |
+    Time_second (byte 12-15)                                     a5:ad:ad:21 => (big endian:) 21ADADA5 =
+                                                                                              2017-7-30 16:51:49
+    """
     def __init__(self):
         self.alarm_status = bytes(4)
         self.dss_status = bytes(4)
@@ -114,26 +118,27 @@ class DoorAlarmStatusRecord(RTLogRecord):
         return "\r\n".join(repr_arr)
 
 
-# Realtime Event record
-# All multibyte values are stored as Little-endian.
-#
-# Byte:              0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-#                    01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
-# Cardno (byte 4-7):             |
-#                                99:92:98:00 => (big endian:) 00989299 = 9999001
-# Pin (byte 0-3):    |
-#                    01:4f:86:00 => (big endian:) 00864f01 = 8802049
-# Verified (byte 8):                         |
-#                                            04
-# DoorID (byte 9):                              |
-#                                               01
-# EventType (byte 10):                             |
-#                                                  00
-# InOutState (byte 11):                               |
-#                                                     00
-#                                                        |
-# Time_second (byte 12-15)                               a5:ad:ad:21 => (big endian:) 21ADADA5 = 2017-7-30 16:51:49
 class EventRecord(RTLogRecord):
+    """Realtime Event record
+    All multibyte values are stored as Little-endian.
+
+    Byte:              0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+                       01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
+    Cardno (byte 4-7):             |
+                                   99:92:98:00 => (big endian:) 00989299 = 9999001
+    Pin (byte 0-3):    |
+                       01:4f:86:00 => (big endian:) 00864f01 = 8802049
+    Verified (byte 8):                         |
+                                               04
+    DoorID (byte 9):                              |
+                                                  01
+    EventType (byte 10):                             |
+                                                     00
+    InOutState (byte 11):                               |
+                                                        00
+                                                           |
+    Time_second (byte 12-15)                               a5:ad:ad:21 => (big endian:) 21ADADA5 = 2017-7-30 16:51:49
+    """
     def __init__(self):
         self.card_no = 0
         self.pin = 0

@@ -1,41 +1,53 @@
 from __future__ import annotations
-import re
+
 import logging
+import re
 import socket
 import threading
+from dataclasses import dataclass, field
 from typing import Dict, Optional
 
 # import consts
-from c3 import consts
-from c3 import crc
-from c3 import utils
-from c3 import rtlog
-from c3 import controldevice
+from c3 import consts, controldevice, crc, rtlog, utils
+
+
+@dataclass
+class C3DeviceInfo:
+    """Basic C3 panel (connection) information, obtained from discovery"""
+    host: str
+    port: int = consts.C3_PORT_DEFAULT
+    serial_number: str = None
+    mac: str = None
+    device_name: str = None
+    firmware_version: str = None
+
+
+@dataclass
+class C3PanelStatus:
+    """C3 panel peripheral status"""
+    nr_of_locks: int = 0
+    nr_aux_in: int = 0
+    nr_aux_out: int = 0
+    lock_status: Dict[int, consts.InOutStatus] = field(default_factory=dict)
+    aux_in_status: Dict[int, consts.InOutStatus] = field(default_factory=dict)
+    aux_out_status: Dict[int, consts.InOutStatus] = field(default_factory=dict)
 
 
 class C3:
     log = logging.getLogger("C3")
     log.setLevel(logging.ERROR)
 
-    def __init__(self, host: str, port: int = None, mac: str = None, sn: str = None, device: str = None,
-                 firmware_version: str = None) -> None:
+    def __init__(self, host: [str | C3DeviceInfo], port: int = consts.C3_PORT_DEFAULT) -> None:
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2)
-        self._connected = False
+        self._connected: bool = False
         self._session_id: int = 0
         self._request_nr: int = 0
-        self._nr_of_locks = 0
-        self._nr_aux_in = 0
-        self._nr_aux_out = 0
-        self._host = host
-        self._port = port or consts.C3_PORT_DEFAULT
-        self._mac = mac
-        self._sn = sn
-        self._device = device
-        self._firmware_version = firmware_version
-        self._lock_status: Dict[int, consts.InOutStatus] = {}
-        self._aux_in_status: Dict[int, consts.InOutStatus] = {}
-        self._aux_out_status: Dict[int, consts.InOutStatus] = {}
+        self._status: C3PanelStatus = C3PanelStatus()
+        if isinstance(host, C3DeviceInfo):
+            self._device_info: C3DeviceInfo = host
+        elif isinstance(host, str):
+            self._device_info: C3DeviceInfo = C3DeviceInfo(host=host, port=port or consts.C3_PORT_DEFAULT)
 
     @classmethod
     def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
@@ -109,12 +121,12 @@ class C3:
     def _receive(self) -> tuple[bytearray, int]:
         # Get the first 5 bytes
         header = self._sock.recv(5)
-        self.log.debug(f"Receiving header: {header.hex()}")
+        self.log.debug("Receiving header: %s", header.hex())
 
         received_command, data_size = self._get_message_header(header)
         # Get the message data and signature
         payload = self._sock.recv(data_size + 3)
-        self.log.debug(f"Receiving payload: {payload.hex()}", )
+        self.log.debug("Receiving payload: %s", payload.hex())
         message = self._get_message(header + payload)
 
         if len(message) != data_size:
@@ -162,19 +174,19 @@ class C3:
 
     @classmethod
     def _parse_kv_from_message(cls, message: bytes) -> dict:
-        kv = {}
+        kv_pairs = {}
 
         message_str = message.decode(encoding='ascii', errors='ignore')
         pattern = re.compile(r"([\w~]+)=([^,]+)")
-        for (k, v) in re.findall(pattern, message_str):
-            kv[k] = v
+        for (param_name, param_value) in re.findall(pattern, message_str):
+            kv_pairs[param_name] = param_value
 
-        return kv
+        return kv_pairs
 
     def __repr__(self):
         return "\r\n".join([
             f"- Host: {self.host} @ {self.port}",
-            f"- Device: {self.device} (sn: {self.sn})",
+            f"- Device: {self.device_name} (sn: {self.serial_number})",
             f"- Firmware version: {self.firmware_version}"
         ])
 
@@ -183,53 +195,53 @@ class C3:
 
     @property
     def host(self) -> str:
-        return self._host
+        return self._device_info.host
 
     @host.setter
     def host(self, host: str):
         if not self.is_connected():
-            self._host = host
+            self._device_info.host = host
         else:
             raise ConnectionError("Cannot set host when C3 is connected. Disconnect first.")
 
     @property
     def port(self) -> int:
-        return self._port
+        return self._device_info.port
 
     @port.setter
     def port(self, port: int):
         if not self.is_connected():
-            self._port = port
+            self._device_info.port = port
         else:
             raise ConnectionError("Cannot set port when C3 is connected. Disconnect first.")
 
     @property
     def mac(self) -> str:
-        return self._mac or '?'
+        return self._device_info.mac or '?'
 
     @property
-    def sn(self) -> str:
-        return self._sn or '?'
+    def serial_number(self) -> str:
+        return self._device_info.serial_number or '?'
 
     @property
-    def device(self) -> str:
-        return self._device or '?'
+    def device_name(self) -> str:
+        return self._device_info.device_name or '?'
 
     @property
     def firmware_version(self) -> str:
-        return self._firmware_version or '?'
+        return self._device_info.firmware_version or '?'
 
     @property
     def nr_of_locks(self) -> int:
-        return self._nr_of_locks or 0
+        return self._status.nr_of_locks or 0
 
     @property
     def nr_aux_in(self) -> int:
-        return self._nr_aux_in or 0
+        return self._status.nr_aux_in or 0
 
     @property
     def nr_aux_out(self) -> int:
-        return self._nr_aux_out or 0
+        return self._status.nr_aux_out or 0
 
     @classmethod
     def discover(cls, interface_address: str = None, timeout: int = 2) -> list[C3]:
@@ -238,16 +250,16 @@ class C3:
         message = cls._construct_message(None, None, consts.Command.DISCOVER, consts.C3_DISCOVERY_MESSAGE)
 
         if interface_address:
-            ips = [interface_address]
+            ip_addresses = [interface_address]
         else:
             interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
-            ips = [ip[-1][0] for ip in interfaces]
-        for ip in ips:
-            cls.log.debug(f"Discover on {ip}")
+            ip_addresses = [ip[-1][0] for ip in interfaces]
+        for ip_address in ip_addresses:
+            cls.log.debug("Discover on %s", ip_address)
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             sock.settimeout(timeout)
-            sock.bind((ip, 0))
+            sock.bind((ip_address, 0))
             sock.sendto(message, ("255.255.255.255", consts.C3_PORT_BROADCAST))
 
             while True:
@@ -267,13 +279,13 @@ class C3:
                                 "Length of received message (%d) does not match specified size (%d)" % (len(message),
                                                                                                         data_size))
                         data = cls._parse_kv_from_message(message)
-                        devices.append(C3(
+                        devices.append(C3(C3DeviceInfo(
                             host=data.get("IP"),
                             mac=data.get("MAC"),
-                            sn=data.get("SN"),
-                            device=data.get("Device"),
+                            serial_number=data.get("SN"),
+                            device_name=data.get("Device"),
                             firmware_version=data.get("Ver")
-                        ))
+                        )))
             sock.close()
 
         return devices
@@ -284,7 +296,7 @@ class C3:
         self._session_id = 0
 
         try:
-            self._sock.connect((self._host, self._port))
+            self._sock.connect((self._device_info.host, self._device_info.port))
             bytes_written = self._send(consts.Command.CONNECT)
             if bytes_written > 0:
                 receive_data, bytes_received = self._receive()
@@ -292,18 +304,22 @@ class C3:
                     self._session_id = (receive_data[1] << 8) + receive_data[0]
                     self.log.debug("Connected with Session ID %x", self._session_id)
                     self._connected = True
-        except Exception as e:
-            self.log.error(f"Connection to {self._host} failed: {e}")
+        except ConnectionError as ex:
+            self.log.error("Connection to %s failed: %s", self._device_info.host, ex)
+        except ValueError as ex:
+            self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
 
         if self._connected:
             try:
                 params = self.get_device_param(["~SerialNumber", "LockCount", "AuxInCount", "AuxOutCount"])
-                self._sn = int(params.get("~SerialNumber", self._sn))
-                self._nr_of_locks = int(params.get("LockCount", self._nr_of_locks))
-                self._nr_aux_in = int(params.get("AuxInCount", self._nr_aux_in))
-                self._nr_aux_out = int(params.get("AuxOutCount", self._nr_aux_out))
-            except Exception as e:
-                self.log.error(f"Retrieving configuration parameters from {self._host} failed: {e}")
+                self._device_info.serial_number = params.get("~SerialNumber", self._device_info.serial_number)
+                self._status.nr_of_locks = int(params.get("LockCount", self._status.nr_of_locks))
+                self._status.nr_aux_in = int(params.get("AuxInCount", self._status.nr_aux_in))
+                self._status.nr_aux_out = int(params.get("AuxOutCount", self._status.nr_aux_out))
+            except ConnectionError as ex:
+                self.log.error("Connection to %s failed: %s", self._device_info.host, ex)
+            except ValueError as ex:
+                self.log.error("Retrieving configuration parameters from %s failed: %s", self._device_info.host, ex)
 
         return self._connected
 
@@ -330,19 +346,19 @@ class C3:
     def _update_inout_status(self, logs: list[rtlog.RTLogRecord]):
         for log in logs:
             if isinstance(log, rtlog.DoorAlarmStatusRecord):
-                for lock_nr in range(1, self._nr_of_locks+1):
-                    self._lock_status[lock_nr] = log.door_sensor_status(lock_nr)
+                for lock_nr in range(1, self._status.nr_of_locks+1):
+                    self._status.lock_status[lock_nr] = log.door_sensor_status(lock_nr)
             elif isinstance(log, rtlog.EventRecord):
                 if log.event_type == consts.EventType.OPEN_AUX_OUTPUT:
-                    self._aux_out_status[log.door_id] = consts.InOutStatus.OPEN
+                    self._status.aux_out_status[log.door_id] = consts.InOutStatus.OPEN
                 elif log.event_type == consts.EventType.CLOSE_AUX_OUTPUT:
-                    self._aux_out_status[log.door_id] = consts.InOutStatus.CLOSED
+                    self._status.aux_out_status[log.door_id] = consts.InOutStatus.CLOSED
                 elif log.event_type == consts.EventType.AUX_INPUT_DISCONNECT:
-                    self._aux_in_status[log.door_id] = consts.InOutStatus.OPEN
+                    self._status.aux_in_status[log.door_id] = consts.InOutStatus.OPEN
                 elif log.event_type == consts.EventType.AUX_INPUT_SHORT:
-                    self._aux_in_status[log.door_id] = consts.InOutStatus.CLOSED
+                    self._status.aux_in_status[log.door_id] = consts.InOutStatus.CLOSED
 
-    def get_rt_log(self) -> list[rtlog.RTLogRecord]:
+    def get_rt_log(self) -> list[rtlog.EventRecord | rtlog.DoorAlarmStatusRecord]:
         """Retrieve the latest event or alarm records."""
         records = []
 
@@ -373,7 +389,7 @@ class C3:
 
         The C3 does not send an event when an auxiliary output closes after a certain duration.
         This function is trigger by an automatic internal timer to set the internal state to closed."""
-        self._aux_out_status[aux_nr] = consts.InOutStatus.CLOSED
+        self._status.aux_out_status[aux_nr] = consts.InOutStatus.CLOSED
 
     def control_device(self, command: controldevice.ControlDeviceBase):
         """Send a control command to the panel."""
@@ -391,14 +407,17 @@ class C3:
     def lock_status(self, door_nr: int) -> consts.InOutStatus:
         """Returns the (cached) door open/close status.
         Requires a preceding call to get_rt_log to update to the latest status."""
-        return self._lock_status[door_nr] if door_nr in self._lock_status else consts.InOutStatus.UNKNOWN
+        return self._status.lock_status[door_nr] if door_nr in self._status.lock_status else \
+            consts.InOutStatus.UNKNOWN
 
     def aux_in_status(self, aux_nr: int) -> consts.InOutStatus:
         """Returns the (cached) auxiliary input short/disconnect status.
         Requires a preceding call to get_rt_log to update to the latest status."""
-        return self._aux_in_status[aux_nr] if aux_nr in self._aux_in_status else consts.InOutStatus.UNKNOWN
+        return self._status.aux_in_status[aux_nr] if aux_nr in self._status.aux_in_status else \
+            consts.InOutStatus.UNKNOWN
 
     def aux_out_status(self, aux_nr: int) -> consts.InOutStatus:
         """Returns the (cached) auxiliary output open/close status.
         Requires a preceding call to get_rt_log to update to the latest status."""
-        return self._aux_out_status[aux_nr] if aux_nr in self._aux_out_status else consts.InOutStatus.UNKNOWN
+        return self._status.aux_out_status[aux_nr] if aux_nr in self._status.aux_out_status else \
+            consts.InOutStatus.UNKNOWN

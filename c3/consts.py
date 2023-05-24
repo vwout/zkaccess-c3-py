@@ -13,14 +13,14 @@ C3_DISCOVERY_MESSAGE = "CallSecurityDevice"
 
 
 class Command(IntEnum):
-    """Enumeration of supported device interaction commands"""
-    DISCOVER = 0x14,
-    CONNECT = 0x76,
-    DISCONNECT = 0x02,
-    GETPARAM = 0x04,
-    DATATABLE_CFG = 0x06,
-    CONTROL = 0x05,
-    RTLOG = 0x0B,
+    """Enumeration of supported device_name interaction commands"""
+    DISCOVER = 0x14
+    CONNECT = 0x76
+    DISCONNECT = 0x02
+    GETPARAM = 0x04
+    DATATABLE_CFG = 0x06
+    CONTROL = 0x05
+    RTLOG = 0x0B
 
 
 C3_REPLY_OK = 0xC8
@@ -35,7 +35,7 @@ Errors = {
 
 @unique
 class _IntEnumWithDescription(IntEnum):
-    def __new__(cls, *args, **kwds):
+    def __new__(cls, *args):
         obj = int.__new__(cls, args[0])
         obj._value_ = args[0]
         return obj

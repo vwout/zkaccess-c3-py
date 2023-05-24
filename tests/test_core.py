@@ -22,7 +22,9 @@ def test_core_get_device_param():
         panel = C3('localhost')
         mock_socket.return_value.send.return_value = 8
         mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
-                                                     bytes.fromhex("d18a0000915255")]
+                                                     bytes.fromhex("d18a0000915255"),
+                                                     bytes.fromhex("aa01c80400"),
+                                                     bytes.fromhex("d18a0000")]
 
         assert panel.connect() is True
 
