@@ -10,6 +10,7 @@ from c3 import controldevice
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('host', help='C3 panel IP address or host name')
+    parser.add_argument('--password', help='Password')
     parser.add_argument('--output', choices=['door', 'aux'], required=True, help='Output is door or auxiliary')
     parser.add_argument('--number', type=int, required=True, help='Door or auxiliary output number')
     group = parser.add_mutually_exclusive_group(required=True)
@@ -28,7 +29,7 @@ def main():
     panel.log.setLevel(logging.DEBUG)
 
     try:
-        if panel.connect():
+        if panel.connect(args.password):
             operation = controldevice.ControlDeviceOutput(args.number,
                                                           consts.ControlOutputAddress.AUX_OUTPUT if args.output == 'aux'
                                                           else consts.ControlOutputAddress.DOOR_OUTPUT, duration)

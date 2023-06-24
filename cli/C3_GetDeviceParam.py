@@ -9,6 +9,7 @@ from c3.utils import C3DateTime
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('host', help='C3 panel IP address or host name')
+    parser.add_argument('--password', help='Password')
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
@@ -17,7 +18,7 @@ def main():
     panel.log.setLevel(logging.DEBUG)
 
     try:
-        if panel.connect():
+        if panel.connect(args.password):
             print("Device:")
             print(repr(panel))
 

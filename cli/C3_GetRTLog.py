@@ -10,6 +10,7 @@ from c3 import rtlog
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('host', help='C3 panel IP address or host name')
+    parser.add_argument('--password', help='Password')
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
@@ -17,7 +18,7 @@ def main():
     panel.log.addHandler(logging.StreamHandler(sys.stdout))
     panel.log.setLevel(logging.DEBUG)
 
-    if panel.connect():
+    if panel.connect(args.password):
         try:
             while True:
                 last_record_is_status = False
