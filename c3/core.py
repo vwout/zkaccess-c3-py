@@ -41,6 +41,7 @@ class C3:
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2)
         self._connected: bool = False
+        self._session_less = False
         self._session_id: int = 0xFEFE
         self._request_nr: int = -258
         self._status: C3PanelStatus = C3PanelStatus()
@@ -300,19 +301,37 @@ class C3:
         if password:
             data = bytearray(password.encode('ascii'))
 
+        # Attempt to connect to panel with session initiation command
         try:
             self._sock.connect((self._device_info.host, self._device_info.port))
-            bytes_written = self._send(consts.Command.CONNECT, data)
+            bytes_written = self._send(consts.Command.CONNECT_SESSION, data)
             if bytes_written > 0:
                 receive_data, bytes_received = self._receive()
                 if bytes_received > 2:
                     self._session_id = (receive_data[1] << 8) + receive_data[0]
                     self.log.debug("Connected with Session ID %04x", self._session_id)
+                    self._session_less = False
                     self._connected = True
         except ConnectionError as ex:
-            self.log.error("Connection to %s failed: %s", self._device_info.host, ex)
+            self.log.error("Connection attempt with session to %s failed: %s", self._device_info.host, ex)
         except ValueError as ex:
             self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
+
+        # Alternatively attempt to connect to panel without session initiation
+        if not self._connected:
+            try:
+                self._session_id = None
+                self._sock.connect((self._device_info.host, self._device_info.port))
+                bytes_written = self._send(consts.Command.CONNECT_SESSION_LESS, data)
+                if bytes_written > 0:
+                    self._receive()
+                    self.log.debug("Connected without session")
+                    self._session_less = True
+                    self._connected = True
+            except ConnectionError as ex:
+                self.log.error("Connection attempt without session to %s failed: %s", self._device_info.host, ex)
+            except ValueError as ex:
+                self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
 
         if self._connected:
             try:
@@ -335,7 +354,7 @@ class C3:
             self._sock.close()
 
         self._connected = False
-        self._session_id = 0xFEFE
+        self._session_id = None
         self._request_nr: -258
 
     def get_device_param(self, request_parameters: list[str]) -> dict:

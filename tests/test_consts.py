@@ -2,7 +2,7 @@ from c3.consts import *
 
 
 def test_commands():
-    connect_cmd = Command.CONNECT
+    connect_cmd = Command.CONNECT_SESSION
     assert 0x76 == connect_cmd
     connect_reply = C3_REPLY_OK
     assert 0xC8 == connect_reply
