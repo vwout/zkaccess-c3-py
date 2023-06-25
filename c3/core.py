@@ -315,7 +315,7 @@ class C3:
                     self._session_less = False
                     self._connected = True
         except ConnectionError as ex:
-            self.log.error("Connection attempt with session to %s failed: %s", self._device_info.host, ex)
+            self.log.debug("Connection attempt with session to %s failed: %s", self._device_info.host, ex)
         except ValueError as ex:
             self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
 
@@ -331,7 +331,7 @@ class C3:
                     self._session_less = True
                     self._connected = True
             except ConnectionError as ex:
-                self.log.error("Connection attempt without session to %s failed: %s", self._device_info.host, ex)
+                self.log.debug("Connection attempt without session to %s failed: %s", self._device_info.host, ex)
             except ValueError as ex:
                 self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
 
