@@ -40,6 +40,28 @@ def test_core_get_device_param():
         assert params["AuxOutCount"] == "2"
 
 
+def test_core_get_device_param_session_less():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            # Reject response to session connect attempt
+            bytes.fromhex("aa01c90100"), bytes.fromhex("f313d955"),
+            # Confirm session-less connection attempt
+            bytes.fromhex("aa01c80000"), bytes.fromhex("800255"),
+            # Session-less response to init-getparams
+            bytes.fromhex("aa01c84800"), bytes.fromhex("7e53657269616c4e756d6265723d4444473831333030313630393232303034"
+                                                       "30312c4c6f636b436f756e743d342c417578496e436f756e743d342c417578"
+                                                       "4f7574436f756e743d34c6be55"),
+        ]
+
+        assert panel.connect() is True
+        assert panel.serial_number == "DDG8130016092200401"
+        assert panel.nr_of_locks == 4
+        assert panel.nr_aux_out == 4
+        assert panel.nr_aux_in == 4
+
+
 def test_core_lock_status():
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')

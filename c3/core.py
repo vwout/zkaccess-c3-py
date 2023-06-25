@@ -147,17 +147,19 @@ class C3:
     def _send_receive(self, command: consts.Command, data=None) -> tuple[bytearray, int]:
         bytes_received = 0
         receive_data = bytearray()
+        session_offset = 0
 
         bytes_written = self._send(command, data)
         if bytes_written > 0:
             receive_data, bytes_received = self._receive()
-            if bytes_received > 2:
+            if not self._session_less and bytes_received > 2:
+                session_offset = 4
                 session_id = (receive_data[1] << 8) + receive_data[0]
                 # msg_seq = (receive_data[3] << 8) + receive_data[2]
                 if self._session_id != session_id:
                     raise ValueError("Data received with invalid session ID")
 
-        return receive_data[4:], bytes_received-4
+        return receive_data[session_offset:], bytes_received-session_offset
 
     def is_connected(self) -> bool:
         # try:
