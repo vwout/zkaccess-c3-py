@@ -11,55 +11,64 @@ from c3 import C3
 ```
 A panel connection can be created from the main class `C3`:
 ```
-    panel = C3()
-    if panel.connect(ip):
+    panel = C3(ip)
+    if panel.connect():
       panel.get_device_param(["~SerialNumber", "LockCount")
 ```
 To use the real-time log (RTLog), or control outputs, also include the helper classes from `controldevice` and `rtlog`.
+
+## Compatible devices
+The following devices are tested and known compatible:
+- C3-200 (firmware AC Ver 4.1.9 4609-03 Apr 7 2016)
+- C3-400 (firmware AC Ver 4.3.4 Apr 27 2017)
 
 ## Protocol
 The C3 access panels communicate using RS485 or TCP/IP.
 This library only support TCP/IP connections using IPv4.
 The connection is optionally secured by a password.
-Connections to C3 panels that use a password are not supported for this moment.
 
 The wire protocol for the access panels is binary, with the following datagram both for requests (from client to equipment) and responses:
 
 | Byte        | 0      | 1       | 2       | 3          | 4          | 5,6,7,8, ...  | n-2, n-1 | n       |
 |-------------|--------|---------|---------|------------|------------|---------------|----------|---------|
-| **Meaning** | Start  | Version | Command | Length Lsb | Length Msb | Data          | Checksum | End     |
+| **Meaning** | Start  | Version | Command | Length LSB | Length MSB | Data          | Checksum | End     |
 |  **Value**  | `0xAA` | `0x01`  |         |            |            |               |          | `0x55`  |
 
-The start bytes 0, 1 and last byte have a fixed value.
-The *Command* is one of the following (only listing commands supported by this library)
+- The start bytes 0, 1 and last byte have a fixed value.
+- The *Command* is one of the following (only listing commands supported by this library)
 
-| Code   | Command                                             |
-|--------|-----------------------------------------------------|
-| `0x76` | Connect (session initiation)                        |
-| `0x02` | Disconnection (session end)                         |
-| `0x05` | Device control command                              |
-| `0x0B` | Retrieve realtime log                               |
-| `0xC8` | Response (confirm successful execution of command)  |
+  | Code   | Command                                            |
+  |--------|----------------------------------------------------|
+  | `0x01` | Connect (without session initiation)               |
+  | `0x76` | Connect (session initiation)                       |
+  | `0x02` | Disconnection (session end)                        |
+  | `0x05` | Device control command                             |
+  | `0x0B` | Retrieve realtime log                              |
+  | `0xC8` | Response (confirm successful execution of command) |
 
-The *Length* field (2 bytes, in Little Endian encoding) contains the number of bytes of the *Data* field.
-The *Data* field (as of byte 5) typically has at least 4 bytes:
-- Session Id (2 bytes, in Little Endian encoding): The session identifier assigned by the equipment in response to a session initiation command
-- Message Number (2 bytes, in Little Endian encoding): A message sequence number that starts from 0 (the session initiation command) and is increased with every command send
+- The *Length* field (2 bytes, in Little Endian encoding) contains the number of bytes of the *Data* field.
+- The *Data* field (as of byte 5) may use 4 reserved bytes in front of actual payload:
+  - Session Id (2 bytes, in Little Endian encoding): The session identifier assigned by the equipment in response to a session initiation command
+  - Message Number (2 bytes, in Little Endian encoding): A message sequence number that starts from -258 (the session initiation command) and is increased with every command send
 
-| Byte         | 5             | 6             | 7              | 8              | ...      |
-|--------------|---------------|---------------|----------------|----------------|----------|
-|  **Meaning** | SessionId Lsb | SessionId Msb | Message Nr Lsb | Message Nr Msb | Payload  |
+  | Byte         | 5             | 6             | 7              | 8              | ...      |
+  |--------------|---------------|---------------|----------------|----------------|----------|
+  |  **Meaning** | SessionId Lsb | SessionId Msb | Message Nr Lsb | Message Nr Msb | Payload  |
 
-The *Checksum* is a CRC-16 checksum calculated over the full message excluding the *Start* and *End* byte.
+  Whether the Session Id and Message Number is used, depends on how the connection is made (using either command 0x01 or 0x76).
+  The support for these commands varies per panel / firmware combination.
+
+- The *Checksum* is a CRC-16 checksum calculated over the full message excluding the *Start* and *End* byte.
 
 ## API
 ### Connect
 ```
-connect(host, port=4370)
+connect(password)
 ```
 The method is used to connect a C3 device using TCP. 
 RS485 is not supported,  neither is using a password to secure the connection.
 This method must be called before any other method and initializes a C3 session.
+The parameter `password` is optional, when omitted, a connection attempt is made without password.
 Returns true in case of a successful connection.
 
 ### Disconnect
