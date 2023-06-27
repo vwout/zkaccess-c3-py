@@ -152,15 +152,19 @@ class C3:
         receive_data = bytearray()
         session_offset = 0
 
-        bytes_written = self._send(command, data)
-        if bytes_written > 0:
-            receive_data, bytes_received = self._receive()
-            if not self._session_less and bytes_received > 2:
-                session_offset = 4
-                session_id = (receive_data[1] << 8) + receive_data[0]
-                # msg_seq = (receive_data[3] << 8) + receive_data[2]
-                if self._session_id != session_id:
-                    raise ValueError("Data received with invalid session ID")
+        try:
+            bytes_written = self._send(command, data)
+            if bytes_written > 0:
+                receive_data, bytes_received = self._receive()
+                if not self._session_less and bytes_received > 2:
+                    session_offset = 4
+                    session_id = (receive_data[1] << 8) + receive_data[0]
+                    # msg_seq = (receive_data[3] << 8) + receive_data[2]
+                    if self._session_id != session_id:
+                        raise ValueError("Data received with invalid session ID")
+        except BrokenPipeError as ex:
+            self._connected = False
+            raise ConnectionError(f"Unexpected connection end: {ex}") from ex
 
         return receive_data[session_offset:], bytes_received-session_offset
 
