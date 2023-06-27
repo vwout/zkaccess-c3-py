@@ -124,11 +124,14 @@ class C3:
         header = self._sock.recv(5)
         self.log.debug("Receiving header: %s", header.hex())
 
+        message = bytearray()
         received_command, data_size = self._get_message_header(header)
-        # Get the message data and signature
+        # Get the optional message data, checksum and end marker
         payload = self._sock.recv(data_size + 3)
-        self.log.debug("Receiving payload: %s", payload.hex())
-        message = self._get_message(header + payload)
+        if data_size > 0:
+            # Process message in case data available
+            self.log.debug("Receiving payload: %s", payload.hex())
+            message = self._get_message(header + payload)
 
         if len(message) != data_size:
             raise ValueError(f"Length of received message ({len(message)}) does not match specified size ({data_size})")

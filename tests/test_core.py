@@ -1,5 +1,6 @@
 from unittest import mock
 import time
+import pytest
 
 from c3 import rtlog
 from c3.core import C3
@@ -21,10 +22,10 @@ def test_core_get_device_param():
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')
         mock_socket.return_value.send.return_value = 8
-        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
-                                                     bytes.fromhex("d18a0000915255"),
-                                                     bytes.fromhex("aa01c80400"),
-                                                     bytes.fromhex("d18a0000")]
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a0000915255"),
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a000055")
+        ]
 
         assert panel.connect() is True
 
@@ -40,7 +41,39 @@ def test_core_get_device_param():
         assert params["AuxOutCount"] == "2"
 
 
-def test_core_get_device_param_session_less():
+def test_core_connect_response_incomplete():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a0000915255"),
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a000055")
+        ]
+
+        assert panel.connect() is True
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80800"), bytes.fromhex("d18a020012345678")]
+        with pytest.raises(ValueError):
+            panel.get_device_param([])
+
+
+def test_core_connect_response_no_data():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a0000915255"),
+            bytes(), bytes()
+        ]
+
+        assert panel.connect() is True
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80800"), bytes()]
+        with pytest.raises(ValueError):
+            panel.get_device_param([])
+
+
+def test_core_connect_session_less():
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')
         mock_socket.return_value.send.return_value = 8
