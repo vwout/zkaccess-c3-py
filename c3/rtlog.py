@@ -55,8 +55,14 @@ class DoorAlarmStatusRecord(RTLogRecord):
         record = DoorAlarmStatusRecord()
         record.alarm_status = bytes(data[0:4])
         record.dss_status = bytes(data[4:8])
-        record.verified = consts.VerificationMode(data[9])
-        record.event_type = consts.EventType(data[10])
+        try:
+            record.verified = consts.VerificationMode(data[9])
+        except ValueError:
+            record.verified = consts.VerificationMode.OTHER
+        try:
+            record.event_type = consts.EventType(data[10])
+        except ValueError:
+            record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
         record.time_second = C3DateTime.from_value(int.from_bytes(data[12:16], byteorder="little"))
         return record
 
@@ -153,10 +159,19 @@ class EventRecord(RTLogRecord):
         record = EventRecord()
         record.card_no = int.from_bytes(data[0:4], byteorder="little")
         record.pin = int.from_bytes(data[4:8], byteorder="little")
-        record.verified = consts.VerificationMode(data[8])
+        try:
+            record.verified = consts.VerificationMode(data[8])
+        except ValueError:
+            record.verified = consts.VerificationMode.OTHER
         record.door_id = data[9]
-        record.event_type = consts.EventType(data[10])
-        record.in_out_state = consts.InOutDirection(data[11])
+        try:
+            record.event_type = consts.EventType(data[10])
+        except ValueError:
+            record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
+        try:
+            record.in_out_state = consts.InOutDirection(data[11])
+        except ValueError:
+            record.in_out_state = consts.InOutDirection.UNKNOWN_UNSUPPORTED
         record.time_second = C3DateTime.from_value(int.from_bytes(data[12:16], byteorder="little"))
         return record
 

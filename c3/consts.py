@@ -138,12 +138,14 @@ class EventType(_IntEnumWithDescription):
     AUX_INPUT_DISCONNECT = 220, "Auxiliary Input Disconnected"
     AUX_INPUT_SHORT = 221, "Auxiliary Input Shorted"
     DOOR_ALARM_STATUS = 255, "Current door and alarm status"
+    UNKNOWN_UNSUPPORTED = 999, "Unknown"
 
 
 class InOutDirection(_IntEnumWithDescription):
     ENTRY = 0, "Entry"
     EXIT = 3,  "Exit"
     NONE = 2,  "None"
+    UNKNOWN_UNSUPPORTED = 15, "Unknown"
 
 
 class AlarmStatus(_IntEnumWithDescription):

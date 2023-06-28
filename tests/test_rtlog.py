@@ -1,3 +1,7 @@
+from unittest import mock
+
+from c3.core import C3
+from c3.consts import VerificationMode
 from c3.rtlog import EventRecord, DoorAlarmStatusRecord
 from c3.utils import C3DateTime
 
@@ -50,3 +54,30 @@ def test_c3_rtlog_decode_status2():
     assert record.is_door_alarm()
     assert not record.is_event()
     print(repr(record))
+
+
+def test_rtlog_unknown_verification_mode():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa00c80400"), bytes.fromhex("d805fefea30955"),
+            bytes.fromhex("aa00c80400"), bytes.fromhex("d805000062e955")
+        ]
+
+        assert panel.connect() is True
+
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa01c81400"),
+            bytes.fromhex("d805e8ff0200000011000000000bff00fa61fb2c38b255")]
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert isinstance(logs[0], DoorAlarmStatusRecord)
+        assert logs[0].verified == VerificationMode.CARD_WITH_PASSWORD
+
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa01c81400"),
+            bytes.fromhex("d805e8ff02000000110007000007ff00fa61fb2c456855")]
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert logs[0].verified == VerificationMode.OTHER
