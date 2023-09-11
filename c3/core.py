@@ -52,13 +52,14 @@ class C3:
 
     @classmethod
     def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
-        command = None
-        data_size = 0
-
         if len(data) >= 5:
             if data[0] == consts.C3_MESSAGE_START:  # and data[1] == consts.C3_PROTOCOL_VERSION:
                 command = data[2]
                 data_size = data[3] + (data[4] * 255)
+            else:
+                raise ValueError("Received reply does not start with start token")
+        else:
+            raise ValueError("Received reply of unsufficient length (%d)", len(data))
 
         return command, data_size
 

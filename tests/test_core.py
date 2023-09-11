@@ -81,11 +81,11 @@ def test_core_connect_session_less():
             # Reject response to session connect attempt
             bytes.fromhex("aa01c90100"), bytes.fromhex("f313d955"),
             # Confirm session-less connection attempt
-            bytes.fromhex("aa01c80000"), bytes.fromhex("800255"),
+            bytes.fromhex("aa00c80000"), bytes.fromhex("81fe55"),
             # Session-less response to init-getparams
-            bytes.fromhex("aa01c84800"), bytes.fromhex("7e53657269616c4e756d6265723d4444473831333030313630393232303034"
+            bytes.fromhex("aa00c84800"), bytes.fromhex("7e53657269616c4e756d6265723d4444473831333030313630393232303034"
                                                        "30312c4c6f636b436f756e743d342c417578496e436f756e743d342c417578"
-                                                       "4f7574436f756e743d34c6be55"),
+                                                       "4f7574436f756e743d343b3f55"),
         ]
 
         assert panel.connect() is True
