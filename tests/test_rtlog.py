@@ -81,3 +81,38 @@ def test_rtlog_unknown_verification_mode():
         logs = panel.get_rt_log()
         assert len(logs) == 1
         assert logs[0].verified == VerificationMode.OTHER
+
+
+def test_rtlog_version2_response():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa02c90100"), bytes.fromhex("f357d955"),
+            bytes.fromhex("aa02c80000"), bytes.fromhex("81fe55"),
+            bytes.fromhex("aa02c84200"), bytes.fromhex("7e53657269616c4e756d6265723d4143"
+                                                       "59543033323335333632372c4c6f636b"
+                                                       "436f756e743d342c417578496e436f756"
+                                                       "e743d342c4175784f7574436f756e743d"
+                                                       "34599355"),
+            # Not sure what the message structure of the response use protocol version (?) 02 is;
+            # for now only the last 16 bytes are used
+            bytes.fromhex("aa02c82400"), bytes.fromhex("02000000"
+                                                       "32000000000000000000000000000000"
+                                                       "0000000000000000c800ff0071c7d42d"
+                                                       "4d3955"),
+            bytes.fromhex("aa02c82400"), bytes.fromhex("02000000"
+                                                       "32000000000000000000000000000000"
+                                                       "0000000000000000c800ff006b13d52d"
+                                                       "0b8955")
+        ]
+
+        assert panel.connect() is True
+
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert isinstance(logs[0], DoorAlarmStatusRecord)
+
+        logs = panel.get_rt_log()
+        assert len(logs) == 1
+        assert isinstance(logs[0], DoorAlarmStatusRecord)

@@ -42,6 +42,7 @@ class C3:
         self._sock.settimeout(2)
         self._connected: bool = False
         self._session_less = False
+        self._protocol_version = None
         self._session_id: int = 0xFEFE
         self._request_nr: int = -258
         self._status: C3PanelStatus = C3PanelStatus()
@@ -51,9 +52,10 @@ class C3:
             self._device_info: C3DeviceInfo = C3DeviceInfo(host=host, port=port or consts.C3_PORT_DEFAULT)
 
     @classmethod
-    def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int]:
+    def _get_message_header(cls, data: [bytes or bytearray]) -> tuple[[int or None], int, int]:
         if len(data) >= 5:
-            if data[0] == consts.C3_MESSAGE_START:  # and data[1] == consts.C3_PROTOCOL_VERSION:
+            version = data[1]
+            if data[0] == consts.C3_MESSAGE_START:  # and version == consts.C3_PROTOCOL_VERSION:
                 command = data[2]
                 data_size = data[3] + (data[4] * 255)
             else:
@@ -61,7 +63,7 @@ class C3:
         else:
             raise ValueError("Received reply of unsufficient length (%d)", len(data))
 
-        return command, data_size
+        return command, data_size, version
 
     @classmethod
     def _get_message(cls, data: [bytes or bytearray]) -> bytearray:
@@ -120,13 +122,13 @@ class C3:
         self._request_nr = self._request_nr + 1
         return bytes_written
 
-    def _receive(self) -> tuple[bytearray, int]:
+    def _receive(self) -> tuple[bytearray, int, int]:
         # Get the first 5 bytes
         header = self._sock.recv(5)
         self.log.debug("Receiving header: %s", header.hex())
 
         message = bytearray()
-        received_command, data_size = self._get_message_header(header)
+        received_command, data_size, protocol_version = self._get_message_header(header)
         # Get the optional message data, checksum and end marker
         payload = self._sock.recv(data_size + 3)
         if data_size > 0:
@@ -146,7 +148,7 @@ class C3:
         else:
             data_size = 0
 
-        return message, data_size
+        return message, data_size, protocol_version
 
     def _send_receive(self, command: consts.Command, data=None) -> tuple[bytearray, int]:
         bytes_received = 0
@@ -156,7 +158,7 @@ class C3:
         try:
             bytes_written = self._send(command, data)
             if bytes_written > 0:
-                receive_data, bytes_received = self._receive()
+                receive_data, bytes_received, _ = self._receive()
                 if not self._session_less and bytes_received > 2:
                     session_offset = 4
                     session_id = (receive_data[1] << 8) + receive_data[0]
@@ -280,7 +282,7 @@ class C3:
                     break
 
                 if payload:
-                    received_command, data_size = cls._get_message_header(payload)
+                    received_command, data_size, _ = cls._get_message_header(payload)
                     if received_command == consts.C3_REPLY_OK:
                         # Get the message data and signature
                         message = cls._get_message(payload)
@@ -316,11 +318,12 @@ class C3:
             self._sock.connect((self._device_info.host, self._device_info.port))
             bytes_written = self._send(consts.Command.CONNECT_SESSION, data)
             if bytes_written > 0:
-                receive_data, bytes_received = self._receive()
+                receive_data, bytes_received, protocol_version = self._receive()
                 if bytes_received > 2:
                     self._session_id = (receive_data[1] << 8) + receive_data[0]
                     self.log.debug("Connected with Session ID %04x", self._session_id)
                     self._session_less = False
+                    self._protocol_version = protocol_version
                     self._connected = True
         except ConnectionError as ex:
             self.log.debug("Connection attempt with session to %s failed: %s", self._device_info.host, ex)
@@ -334,9 +337,10 @@ class C3:
                 self._sock.connect((self._device_info.host, self._device_info.port))
                 bytes_written = self._send(consts.Command.CONNECT_SESSION_LESS, data)
                 if bytes_written > 0:
-                    self._receive()
+                    _, _, protocol_version = self._receive()
                     self.log.debug("Connected without session")
                     self._session_less = True
+                    self._protocol_version = protocol_version
                     self._connected = True
             except ConnectionError as ex:
                 self.log.debug("Connection attempt without session to %s failed: %s", self._device_info.host, ex)
@@ -405,12 +409,15 @@ class C3:
                 logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
                 for log_message in logs_messages:
                     self.log.debug("Received RT Log: %s", log_message.hex())
-                    if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
-                        records.append(rtlog.DoorAlarmStatusRecord.from_bytes(log_message))
-                    else:
-                        records.append(rtlog.EventRecord.from_bytes(log_message))
+                    records.append(rtlog.factory(log_message))
             else:
-                raise ValueError("Received RT Log(s) size is not a multiple of 16: %d" % message_length)
+                if self._protocol_version == 2:
+                    # Protocol version (?) 2 response with a different message structure
+                    # For now ignoring all data but last 16 bytes
+                    self.log.debug("Received too many bytes, only using tail: %s", message.hex())
+                    records.append(rtlog.factory(message[-16:]))
+                else:
+                    raise ValueError("Received RT Log(s) size is not a multiple of 16: %d" % message_length)
         else:
             raise ConnectionError("No connection to C3 panel.")
 
