@@ -57,7 +57,7 @@ class C3:
             version = data[1]
             if data[0] == consts.C3_MESSAGE_START:  # and version == consts.C3_PROTOCOL_VERSION:
                 command = data[2]
-                data_size = data[3] + (data[4] * 255)
+                data_size = data[3] + (data[4] * 256)
             else:
                 raise ValueError("Received reply does not start with start token")
         else:
@@ -78,7 +78,7 @@ class C3:
                 raise ValueError("Payload checksum is invalid: %x%x expected %x%x" %
                                  (data[-3], data[-2], utils.lsb(checksum), utils.msb(checksum)))
         else:
-            raise ValueError("Payload does not include message end marker (%s)" % data[-1])
+            raise ValueError("Payload does not include message end marker (%x)" % data[-1])
 
         return message
 
@@ -133,7 +133,7 @@ class C3:
         payload = self._sock.recv(data_size + 3)
         if data_size > 0:
             # Process message in case data available
-            self.log.debug("Receiving payload: %s", payload.hex())
+            self.log.debug("Receiving payload (data size %d): %s", data_size, payload.hex())
             message = self._get_message(header + payload)
 
         if len(message) != data_size:
