@@ -349,8 +349,10 @@ class C3:
 
         if self._connected:
             try:
-                params = self.get_device_param(["~SerialNumber", "LockCount", "AuxInCount", "AuxOutCount"])
+                params = self.get_device_param(["~SerialNumber", "FirmVer", "DeviceName", "LockCount", "AuxInCount", "AuxOutCount"])
                 self._device_info.serial_number = params.get("~SerialNumber", self._device_info.serial_number)
+                self._device_info.firmware_version = params.get("FirmVer", self._device_info.firmware_version)
+                self._device_info.device_name = params.get("DeviceName", self._device_info.device_name)
                 self._status.nr_of_locks = int(params.get("LockCount", self._status.nr_of_locks))
                 self._status.nr_aux_in = int(params.get("AuxInCount", self._status.nr_aux_in))
                 self._status.nr_aux_out = int(params.get("AuxOutCount", self._status.nr_aux_out))

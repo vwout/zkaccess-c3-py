@@ -24,6 +24,8 @@ def main():
 
             params = panel.get_device_param(["~ZKFPVersion",
                                              "~SerialNumber",
+                                             "FirmVer",
+                                             "DeviceName",
                                              "LockCount",
                                              "ReaderCount",
                                              "AuxInCount",
