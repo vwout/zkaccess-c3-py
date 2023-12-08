@@ -95,6 +95,20 @@ def test_core_connect_session_less():
         assert panel.nr_aux_in == 4
 
 
+def test_core_connect_password():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 12
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa01c80400"), bytes.fromhex("1420fefe4c5e55"),
+            bytes.fromhex("aa01c80000"), bytes.fromhex("1420efe955")
+        ]
+
+        assert panel.connect("banana123") is True
+        assert mock_socket.return_value.send.call_count == 2
+        mock_socket.return_value.send.assert_any_call(bytes.fromhex("aa01760d00fefefefe62616E616E61313233961955"))
+
+
 def test_core_lock_status():
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')
