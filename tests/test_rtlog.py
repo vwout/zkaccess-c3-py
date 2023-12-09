@@ -1,7 +1,7 @@
 from unittest import mock
 
 from c3.core import C3
-from c3.consts import VerificationMode
+from c3.consts import VerificationMode, InOutStatus, EventType
 from c3.rtlog import EventRecord, DoorAlarmStatusRecord
 from c3.utils import C3DateTime
 
@@ -83,7 +83,7 @@ def test_rtlog_unknown_verification_mode():
         assert logs[0].verified == VerificationMode.OTHER
 
 
-def test_rtlog_version2_response():
+def test_rtlog_keyvalue_response():
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')
         mock_socket.return_value.send.return_value = 8
@@ -95,24 +95,54 @@ def test_rtlog_version2_response():
                                                        "436f756e743d342c417578496e436f756"
                                                        "e743d342c4175784f7574436f756e743d"
                                                        "34599355"),
-            # Not sure what the message structure of the response use protocol version (?) 02 is;
-            # for now only the last 16 bytes are used
-            bytes.fromhex("aa02c82400"), bytes.fromhex("02000000"
-                                                       "32000000000000000000000000000000"
-                                                       "0000000000000000c800ff0071c7d42d"
-                                                       "4d3955"),
-            bytes.fromhex("aa02c82400"), bytes.fromhex("02000000"
-                                                       "32000000000000000000000000000000"
-                                                       "0000000000000000c800ff006b13d52d"
-                                                       "0b8955")
+            # Not sure what the message structure of the response use protocol version (?) 02 is
+            bytes.fromhex("aa01c86801"), bytes.fromhex("000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "0000000000000000000000000000000000000000000000000000000000000000"
+                                                       "00000000000000000000000000fabb55"),
+            bytes.fromhex("aa01c8c400"), bytes.fromhex("74696d653d323032332d31322d30362032323a33333a3135097069"
+                                                       "6e3d3009636172646e6f3d30096576656e74616464723d30096576656e743d32"
+                                                       "303609696e6f75747374617475733d3209766572696679747970653d32303009"
+                                                       "696e6465783d380d0a74696d653d323032332d31322d30362032323a35373a35"
+                                                       "340970696e3d3009636172646e6f3d30096576656e74616464723d3109657665"
+                                                       "6e743d3809696e6f75747374617475733d3209766572696679747970653d3230"
+                                                       "3009696e6465783d39621455"),
+            bytes.fromhex("aa01c83a00"), bytes.fromhex("74696d653d323032332d31322d30392031353a30393a33330973656e736f72"
+                                                       "3d32340972656c61793d303409616c61726d3d3030303030303030c2b655")
         ]
 
         assert panel.connect() is True
 
         logs = panel.get_rt_log()
+        assert len(logs) == 0
+
+        logs = panel.get_rt_log()
         assert len(logs) == 1
-        assert isinstance(logs[0], DoorAlarmStatusRecord)
+        assert isinstance(logs[0], EventRecord)
+        assert logs[0].door_id == 1
+        assert logs[0].event_type == EventType.REMOTE_OPENING
+        assert logs[0].verified == VerificationMode.OTHER
 
         logs = panel.get_rt_log()
         assert len(logs) == 1
         assert isinstance(logs[0], DoorAlarmStatusRecord)
+        assert not logs[0].door_is_open(1)
+        assert not logs[0].door_is_open(2)
+        assert logs[0].door_is_open(3)
+        assert not logs[0].door_is_open(4)
+        assert logs[0].door_sensor_status(1) == InOutStatus.UNKNOWN
+        assert logs[0].door_sensor_status(2) == InOutStatus.CLOSED
+        assert logs[0].door_sensor_status(3) == InOutStatus.OPEN
+        assert logs[0].door_sensor_status(4) == InOutStatus.UNKNOWN
+        assert not logs[0].get_alarms(1)
+        assert not logs[0].get_alarms(2)
+        assert not logs[0].get_alarms(3)
+        assert not logs[0].get_alarms(4)

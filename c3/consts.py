@@ -21,7 +21,8 @@ class Command(IntEnum):
     GETPARAM = 0x04
     DATATABLE_CFG = 0x06
     CONTROL = 0x05
-    RTLOG = 0x0B
+    RTLOG_BINARY = 0x0B
+    RTLOG_KEYVALUE = 0x79
 
 
 C3_REPLY_OK = 0xC8

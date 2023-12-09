@@ -24,6 +24,8 @@ To use the real-time log (RTLog), or control outputs, also include the helper cl
 The following devices are tested and known compatible:
 - C3-200 (firmware AC Ver 4.1.9 4609-03 Apr 7 2016)
 - C3-400 (firmware AC Ver 4.3.4 Apr 27 2017)
+- C3-400 (firmware AC Ver 5.4.3.2001 Sep 25 2019)
+- inBio 460 (firmware AC Ver 5.0.9 4609-06 - Sep 15 2017) (probably 260 and 160 also work)
 
 ## Protocol
 The C3 access panels communicate using RS485 or TCP/IP.

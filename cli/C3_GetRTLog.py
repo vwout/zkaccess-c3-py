@@ -30,7 +30,9 @@ def main():
                         last_record_is_status = True
 
                 if last_record_is_status:
-                    time.sleep(10)
+                    time.sleep(9)
+
+                time.sleep(1)
         except KeyboardInterrupt:
             pass
 

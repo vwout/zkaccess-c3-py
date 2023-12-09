@@ -17,32 +17,7 @@ class RTLogRecord(ABC):
 
 
 class DoorAlarmStatusRecord(RTLogRecord):
-    """Realtime Log record for a door and alarm status
-    An RTLog is a binary message of 16 bytes send by the C3 access panel.
-    If the value of byte 10 (the event type) is 255, the RTLog is a Door/Alarm Realtime Status.
-    If the value of byte 10 (the event type) is not 255, the RTLog is a Realtime Event.
-
-    Door/Alarm Realtime Status record
-    All multibyte values are stored as Little-endian.
-
-    Byte:                    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-                             01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
-    Alarm status (byte 4-7):             |
-                                         99:92:98:00 => (big endian:) 00989299 = 9999001
-    DSS status (byte 0-3):   |
-                             01:4f:86:00 => (big endian:) 00864f01 = 8802049
-    Verified (byte 8):                               |
-                                                     04
-    Unused (byte 9):                                    |
-                                                        01
-    EventType (byte 10):                                   |
-                                                           00
-    Unused (byte 11):                                         |
-                                                              00
-                                                                 |
-    Time_second (byte 12-15)                                     a5:ad:ad:21 => (big endian:) 21ADADA5 =
-                                                                                              2017-7-30 16:51:49
-    """
+    """Realtime Log record for a door and alarm status"""
     def __init__(self):
         self.alarm_status = bytes(4)
         self.dss_status = bytes(4)
@@ -52,6 +27,32 @@ class DoorAlarmStatusRecord(RTLogRecord):
 
     @classmethod
     def from_bytes(cls, data: bytes):
+        """Create DoorAlarmStatusRecord from binary log
+        An RTLog is a binary message of 16 bytes send by the C3 access panel.
+        If the value of byte 10 (the event type) is 255, the RTLog is a Door/Alarm Realtime Status.
+        If the value of byte 10 (the event type) is not 255, the RTLog is a Realtime Event.
+
+        Door/Alarm Realtime Status record
+        All multibyte values are stored as Little-endian.
+
+        Byte:                    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+                                 01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
+        Alarm status (byte 4-7):             |
+                                             99:92:98:00 => (big endian:) 00989299 = 9999001
+        DSS status (byte 0-3):   |
+                                 01:4f:86:00 => (big endian:) 00864f01 = 8802049
+        Verified (byte 8):                               |
+                                                         04
+        Unused (byte 9):                                    |
+                                                            01
+        EventType (byte 10):                                   |
+                                                               00
+        Unused (byte 11):                                         |
+                                                                  00
+                                                                     |
+        Time_second (byte 12-15)                                     a5:ad:ad:21 => (big endian:) 21ADADA5 =
+                                                                                                  2017-7-30 16:51:49
+        """
         record = DoorAlarmStatusRecord()
         record.alarm_status = bytes(data[0:4])
         record.dss_status = bytes(data[4:8])
@@ -64,6 +65,33 @@ class DoorAlarmStatusRecord(RTLogRecord):
         except ValueError:
             record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
         record.time_second = C3DateTime.from_value(int.from_bytes(data[12:16], byteorder="little"))
+        return record
+
+    @classmethod
+    def from_kv(cls, data: dict):
+        """Create EventRecord from text-based key/value log
+        A key/value log contains the following fields:
+        {
+          'time': '2023-12-09 15:09:33',
+          'sensor': '24',
+          'relay': '04',
+          'alarm': '00000000'
+        }
+        """
+        record = DoorAlarmStatusRecord()
+        record.alarm_status = bytes.fromhex(data['alarm'])
+        sensor = int(data['sensor'], base=16)
+        record.dss_status = bytes([(sensor >> (i*2)) & 0x03 for i in range(0, 4)])
+        # relay = 00
+        # try:
+        #     record.verified = consts.VerificationMode(data[9])
+        # except ValueError:
+        #     record.verified = consts.VerificationMode.OTHER
+        # try:
+        #     record.event_type = consts.EventType(data[10])
+        # except ValueError:
+        #     record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
+        record.time_second = C3DateTime.from_str(data['time'])
         return record
 
     def is_door_alarm(self) -> bool:
@@ -125,26 +153,7 @@ class DoorAlarmStatusRecord(RTLogRecord):
 
 
 class EventRecord(RTLogRecord):
-    """Realtime Event record
-    All multibyte values are stored as Little-endian.
-
-    Byte:              0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-                       01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
-    Cardno (byte 4-7):             |
-                                   99:92:98:00 => (big endian:) 00989299 = 9999001
-    Pin (byte 0-3):    |
-                       01:4f:86:00 => (big endian:) 00864f01 = 8802049
-    Verified (byte 8):                         |
-                                               04
-    DoorID (byte 9):                              |
-                                                  01
-    EventType (byte 10):                             |
-                                                     00
-    InOutState (byte 11):                               |
-                                                        00
-                                                           |
-    Time_second (byte 12-15)                               a5:ad:ad:21 => (big endian:) 21ADADA5 = 2017-7-30 16:51:49
-    """
+    """Realtime Event record"""
     def __init__(self):
         self.card_no = 0
         self.pin = 0
@@ -156,6 +165,26 @@ class EventRecord(RTLogRecord):
 
     @classmethod
     def from_bytes(cls, data: bytes):
+        """Create EventRecord from binary log
+        All multibyte values are stored as Little-endian.
+
+        Byte:              0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+                           01:4f:86:00:99:92:98:00:04:01:00:00:a5:ad:ad:21
+        Cardno (byte 4-7):             |
+                                       99:92:98:00 => (big endian:) 00989299 = 9999001
+        Pin (byte 0-3):    |
+                           01:4f:86:00 => (big endian:) 00864f01 = 8802049
+        Verified (byte 8):                         |
+                                                   04
+        DoorID (byte 9):                              |
+                                                      01
+        EventType (byte 10):                             |
+                                                         00
+        InOutState (byte 11):                               |
+                                                            00
+                                                               |
+        Time_second (byte 12-15)                               a5:ad:ad:21 => (big endian)21ADADA5 = 2017-07-30 16:51:49
+        """
         record = EventRecord()
         record.card_no = int.from_bytes(data[0:4], byteorder="little")
         record.pin = int.from_bytes(data[4:8], byteorder="little")
@@ -173,6 +202,40 @@ class EventRecord(RTLogRecord):
         except ValueError:
             record.in_out_state = consts.InOutDirection.UNKNOWN_UNSUPPORTED
         record.time_second = C3DateTime.from_value(int.from_bytes(data[12:16], byteorder="little"))
+        return record
+
+    @classmethod
+    def from_kv(cls, data: dict):
+        """Create EventRecord from text-based key/value log
+        A key/value log contains the following fields:
+        {
+          'time': '2023-12-06 22:33:15',
+          'pin': '0',
+          'cardno': '0',
+          'eventaddr': '1',
+          'event': '8',
+          'inoutstatus': '2',
+          'verifytype': '200',
+          'index': '9'
+        }
+        """
+        record = EventRecord()
+        record.card_no = int(data['cardno'])
+        record.pin = int(data['pin'])
+        try:
+            record.verified = consts.VerificationMode(int(data['verifytype']))
+        except ValueError:
+            record.verified = consts.VerificationMode.OTHER
+        record.door_id = int(data['eventaddr'])
+        try:
+            record.event_type = consts.EventType(int(data['event']))
+        except ValueError:
+            record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
+        try:
+            record.in_out_state = consts.InOutDirection(int(data['inoutstatus']))
+        except ValueError:
+            record.in_out_state = consts.InOutDirection.UNKNOWN_UNSUPPORTED
+        record.time_second = C3DateTime.from_str(data['time'])
         return record
 
     def is_door_alarm(self) -> bool:
@@ -194,8 +257,18 @@ class EventRecord(RTLogRecord):
         return "\r\n".join(repr_arr)
 
 
-def factory(log_message: bytes) -> RTLogRecord:
-    if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
-        return DoorAlarmStatusRecord.from_bytes(log_message)
+def factory(log_message: [bytes, bytearray, dict]) -> RTLogRecord:
+    if isinstance(log_message, (bytes, bytearray)):
+        if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
+            rtlog = DoorAlarmStatusRecord.from_bytes(log_message)
+        else:
+            rtlog = EventRecord.from_bytes(log_message)
+    elif isinstance(log_message, dict):
+        if "event" in log_message:
+            rtlog = EventRecord.from_kv(log_message)
+        else:
+            rtlog = DoorAlarmStatusRecord.from_kv(log_message)
     else:
-        return EventRecord.from_bytes(log_message)
+        raise NotImplementedError(f"RT log type {type(log_message)} is not supported")
+
+    return rtlog

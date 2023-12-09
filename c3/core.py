@@ -43,6 +43,7 @@ class C3:
         self._connected: bool = False
         self._session_less = False
         self._protocol_version = None
+        self._rtlog_command = consts.Command.RTLOG_BINARY
         self._session_id: int = 0xFEFE
         self._request_nr: int = -258
         self._status: C3PanelStatus = C3PanelStatus()
@@ -190,7 +191,7 @@ class C3:
         kv_pairs = {}
 
         message_str = message.decode(encoding='ascii', errors='ignore')
-        pattern = re.compile(r"([\w~]+)=([^,]+)")
+        pattern = re.compile(r"([\w~]+)=([^,\t]+)")
         for (param_name, param_value) in re.findall(pattern, message_str):
             kv_pairs[param_name] = param_value
 
@@ -403,23 +404,27 @@ class C3:
         records = []
 
         if self.is_connected():
-            message, message_length = self._send_receive(consts.Command.RTLOG)
+            message, message_length = self._send_receive(self._rtlog_command)
 
-            # One RT log is 16 bytes
-            # Ensure the array is not empty and a multiple of 16
-            if message_length % 16 == 0:
-                logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
-                for log_message in logs_messages:
-                    self.log.debug("Received RT Log: %s", log_message.hex())
-                    records.append(rtlog.factory(log_message))
-            else:
-                if self._protocol_version == 2:
-                    # Protocol version (?) 2 response with a different message structure
-                    # For now ignoring all data but last 16 bytes
-                    self.log.debug("Received too many bytes, only using tail: %s", message.hex())
-                    records.append(rtlog.factory(message[-16:]))
+            if self._rtlog_command == consts.Command.RTLOG_BINARY:
+                # One RT log is 16 bytes
+                # Ensure the array is not empty and a multiple of 16
+                if message_length % 16 == 0:
+                    logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
+                    for log_message in logs_messages:
+                        self.log.debug("Received RT binary log: %s", log_message.hex())
+                        records.append(rtlog.factory(log_message))
                 else:
-                    raise ValueError("Received RT Log(s) size is not a multiple of 16: %d" % message_length)
+                    # The panel firmware does not support binary mode
+                    self.log.debug("Transition RT log mode to key/value")
+                    self._rtlog_command = consts.Command.RTLOG_KEYVALUE
+            elif self._rtlog_command == consts.Command.RTLOG_KEYVALUE:
+                kv_pairs = self._parse_kv_from_message(message)
+                self.log.debug("Received RT k/v log (%d): %s", len(kv_pairs), kv_pairs)
+                if len(kv_pairs) > 0:
+                    records.append(rtlog.factory(kv_pairs))
+            else:
+                raise NotImplementedError(f"The requested RT log command {self._rtlog_command} is not supported")
         else:
             raise ConnectionError("No connection to C3 panel.")
 
