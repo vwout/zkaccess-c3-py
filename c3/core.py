@@ -125,11 +125,10 @@ class C3:
 
     def _receive(self) -> tuple[bytearray, int, int]:
         # Get the first 5 bytes
-        header = bytearray(b'-----')
         self._sock.settimeout(2)
-        recv_len = self._sock.recv_into(header, 5)
+        header = self._sock.recv(5)
 
-        if recv_len == 5:
+        if len(header) == 5:
             self.log.debug("Received header: %s", header.hex())
 
             message = bytearray()
@@ -151,7 +150,7 @@ class C3:
                 raise ConnectionError(
                     f"Error {error} received in reply: {consts.Errors[error] if error in consts.Errors else 'Unknown'}")
         else:
-            raise ConnectionError(f"Invalid response received; expected 5 bytes, received {recv_len}")
+            raise ConnectionError(f"Invalid response received; expected 5 bytes, received {header}")
 
         return message, data_size, protocol_version
 
