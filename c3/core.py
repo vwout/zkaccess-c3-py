@@ -62,7 +62,7 @@ class C3:
             else:
                 raise ValueError("Received reply does not start with start token")
         else:
-            raise ValueError("Received reply of unsufficient length (%d)", len(data))
+            raise ValueError(f"Received reply of insufficient length {len(data)}")
 
         return command, data_size, version
 
@@ -125,29 +125,33 @@ class C3:
 
     def _receive(self) -> tuple[bytearray, int, int]:
         # Get the first 5 bytes
-        header = self._sock.recv(5)
-        self.log.debug("Receiving header: %s", header.hex())
+        header = bytearray(b'-----')
+        self._sock.settimeout(2)
+        recv_len = self._sock.recv_into(header, 5)
 
-        message = bytearray()
-        received_command, data_size, protocol_version = self._get_message_header(header)
-        # Get the optional message data, checksum and end marker
-        payload = self._sock.recv(data_size + 3)
-        if data_size > 0:
-            # Process message in case data available
-            self.log.debug("Receiving payload (data size %d): %s", data_size, payload.hex())
-            message = self._get_message(header + payload)
+        if recv_len == 5:
+            self.log.debug("Received header: %s", header.hex())
 
-        if len(message) != data_size:
-            raise ValueError(f"Length of received message ({len(message)}) does not match specified size ({data_size})")
+            message = bytearray()
+            received_command, data_size, protocol_version = self._get_message_header(header)
+            # Get the optional message data, checksum (2 bytes) and end marker (1 byte)
+            payload = self._sock.recv(data_size + 3)
+            if data_size > 0:
+                # Process message in case data available
+                self.log.debug("Receiving payload (data size %d): %s", data_size, payload.hex())
+                message = self._get_message(header + payload)
 
-        if received_command == consts.C3_REPLY_OK:
-            pass
-        elif received_command == consts.C3_REPLY_ERROR:
-            error = utils.byte_to_signed_int(message[-1])
-            raise ConnectionError(
-                f"Error {error} received in reply: {consts.Errors[error] if error in consts.Errors else 'Unknown'}")
+            if len(message) != data_size:
+                raise ValueError(f"Length of received message ({len(message)}) does not match specified size ({data_size})")
+
+            if received_command == consts.C3_REPLY_OK:
+                pass
+            elif received_command == consts.C3_REPLY_ERROR:
+                error = utils.byte_to_signed_int(message[-1])
+                raise ConnectionError(
+                    f"Error {error} received in reply: {consts.Errors[error] if error in consts.Errors else 'Unknown'}")
         else:
-            data_size = 0
+            raise ConnectionError(f"Invalid response received; expected 5 bytes, received {recv_len}")
 
         return message, data_size, protocol_version
 
@@ -344,13 +348,15 @@ class C3:
                     self._protocol_version = protocol_version
                     self._connected = True
             except ConnectionError as ex:
-                self.log.debug("Connection attempt without session to %s failed: %s", self._device_info.host, ex)
+                self.log.debug("Connection attempt without session to %s failed: %s",
+                               self._device_info.host, ex)
             except ValueError as ex:
                 self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
 
         if self._connected:
             try:
-                params = self.get_device_param(["~SerialNumber", "FirmVer", "DeviceName", "LockCount", "AuxInCount", "AuxOutCount"])
+                params = self.get_device_param(["~SerialNumber", "FirmVer", "DeviceName", "LockCount", "AuxInCount",
+                                                "AuxOutCount"])
                 self._device_info.serial_number = params.get("~SerialNumber", self._device_info.serial_number)
                 self._device_info.firmware_version = params.get("FirmVer", self._device_info.firmware_version)
                 self._device_info.device_name = params.get("DeviceName", self._device_info.device_name)
@@ -360,7 +366,8 @@ class C3:
             except ConnectionError as ex:
                 self.log.error("Connection to %s failed: %s", self._device_info.host, ex)
             except ValueError as ex:
-                self.log.error("Retrieving configuration parameters from %s failed: %s", self._device_info.host, ex)
+                self.log.error("Retrieving configuration parameters from %s failed: %s",
+                               self._device_info.host, ex)
 
         return self._connected
 
