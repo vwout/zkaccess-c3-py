@@ -42,6 +42,7 @@ class C3:
         self._sock.settimeout(2)
         self._connected: bool = False
         self._session_less = False
+        self._initialized = False
         self._protocol_version = None
         self._rtlog_command = consts.Command.RTLOG_BINARY
         self._session_id: int = 0xFEFE
@@ -150,7 +151,7 @@ class C3:
                 raise ConnectionError(
                     f"Error {error} received in reply: {consts.Errors[error] if error in consts.Errors else 'Unknown'}")
         else:
-            raise ConnectionError(f"Invalid response received; expected 5 bytes, received {header}")
+            raise ConnectionError(f"Invalid response header received; expected 5 bytes, received {header}")
 
         return message, data_size, protocol_version
 
@@ -174,6 +175,24 @@ class C3:
             raise ConnectionError(f"Unexpected connection end: {ex}") from ex
 
         return receive_data[session_offset:], bytes_received-session_offset
+
+    def _initialize(self):
+        if not self._initialized:
+            try:
+                params = self.get_device_param(["~SerialNumber", "FirmVer", "DeviceName", "LockCount", "AuxInCount",
+                                                "AuxOutCount"])
+                self._device_info.serial_number = params.get("~SerialNumber", self._device_info.serial_number)
+                self._device_info.firmware_version = params.get("FirmVer", self._device_info.firmware_version)
+                self._device_info.device_name = params.get("DeviceName", self._device_info.device_name)
+                self._status.nr_of_locks = int(params.get("LockCount", self._status.nr_of_locks))
+                self._status.nr_aux_in = int(params.get("AuxInCount", self._status.nr_aux_in))
+                self._status.nr_aux_out = int(params.get("AuxOutCount", self._status.nr_aux_out))
+                self._initialized = True
+            except ConnectionError as ex:
+                self.log.error("Connection to %s failed: %s", self._device_info.host, ex)
+            except ValueError as ex:
+                self.log.error("Retrieving configuration parameters from %s failed: %s",
+                               self._device_info.host, ex)
 
     def is_connected(self) -> bool:
         # try:
@@ -353,27 +372,19 @@ class C3:
                 self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
 
         if self._connected:
-            try:
-                params = self.get_device_param(["~SerialNumber", "FirmVer", "DeviceName", "LockCount", "AuxInCount",
-                                                "AuxOutCount"])
-                self._device_info.serial_number = params.get("~SerialNumber", self._device_info.serial_number)
-                self._device_info.firmware_version = params.get("FirmVer", self._device_info.firmware_version)
-                self._device_info.device_name = params.get("DeviceName", self._device_info.device_name)
-                self._status.nr_of_locks = int(params.get("LockCount", self._status.nr_of_locks))
-                self._status.nr_aux_in = int(params.get("AuxInCount", self._status.nr_aux_in))
-                self._status.nr_aux_out = int(params.get("AuxOutCount", self._status.nr_aux_out))
-            except ConnectionError as ex:
-                self.log.error("Connection to %s failed: %s", self._device_info.host, ex)
-            except ValueError as ex:
-                self.log.error("Retrieving configuration parameters from %s failed: %s",
-                               self._device_info.host, ex)
+            self._initialize()
 
         return self._connected
 
     def disconnect(self):
         """Disconnect from C3 panel and end session."""
         if self.is_connected():
-            self._send_receive(consts.Command.DISCONNECT)
+            try:
+                self._send_receive(consts.Command.DISCONNECT)
+            except ConnectionError:
+                # Disconnecting a broken connection should not create more trouble,
+                # ignoring a ConnectionError for that reason.
+                pass
             self._sock.close()
 
         self._connected = False
@@ -411,26 +422,26 @@ class C3:
 
         if self.is_connected():
             message, message_length = self._send_receive(self._rtlog_command)
-
-            if self._rtlog_command == consts.Command.RTLOG_BINARY:
-                # One RT log is 16 bytes
-                # Ensure the array is not empty and a multiple of 16
-                if message_length % 16 == 0:
-                    logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
-                    for log_message in logs_messages:
-                        self.log.debug("Received RT binary log: %s", log_message.hex())
-                        records.append(rtlog.factory(log_message))
+            if message_length:
+                if self._rtlog_command == consts.Command.RTLOG_BINARY:
+                    # One RT log is 16 bytes
+                    # Ensure the array is not empty and a multiple of 16
+                    if message_length % 16 == 0:
+                        logs_messages = [message[i:i+16] for i in range(0, message_length, 16)]
+                        for log_message in logs_messages:
+                            self.log.debug("Received RT binary log: %s", log_message.hex())
+                            records.append(rtlog.factory(log_message))
+                    else:
+                        # The panel firmware does not support binary mode
+                        self.log.debug("Transition RT log mode to key/value")
+                        self._rtlog_command = consts.Command.RTLOG_KEYVALUE
+                elif self._rtlog_command == consts.Command.RTLOG_KEYVALUE:
+                    kv_pairs = self._parse_kv_from_message(message)
+                    self.log.debug("Received RT k/v log (%d): %s", len(kv_pairs), kv_pairs)
+                    if len(kv_pairs) > 0:
+                        records.append(rtlog.factory(kv_pairs))
                 else:
-                    # The panel firmware does not support binary mode
-                    self.log.debug("Transition RT log mode to key/value")
-                    self._rtlog_command = consts.Command.RTLOG_KEYVALUE
-            elif self._rtlog_command == consts.Command.RTLOG_KEYVALUE:
-                kv_pairs = self._parse_kv_from_message(message)
-                self.log.debug("Received RT k/v log (%d): %s", len(kv_pairs), kv_pairs)
-                if len(kv_pairs) > 0:
-                    records.append(rtlog.factory(kv_pairs))
-            else:
-                raise NotImplementedError(f"The requested RT log command {self._rtlog_command} is not supported")
+                    raise NotImplementedError(f"The requested RT log command {self._rtlog_command} is not supported")
         else:
             raise ConnectionError("No connection to C3 panel.")
 

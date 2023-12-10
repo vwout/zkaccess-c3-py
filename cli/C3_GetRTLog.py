@@ -22,8 +22,17 @@ def main():
         try:
             while True:
                 last_record_is_status = False
+                records = []
 
-                records = panel.get_rt_log()
+                if not panel.is_connected():
+                    panel.connect(args.password)
+
+                try:
+                    records = panel.get_rt_log()
+                except ConnectionError as ex:
+                    print(f"Error retrieving RT logs: {ex}")
+                    panel.disconnect()
+
                 for record in records:
                     print(repr(record))
                     if isinstance(record, rtlog.DoorAlarmStatusRecord):
