@@ -71,6 +71,12 @@ class ControlOutputAddress(_IntEnumWithDescription):
     AUX_OUTPUT = 2,  "Auxiliary output"
 
 
+class DoorSensorType(_IntEnumWithDescription):
+    NONE = 0,         "Not available"
+    NORMAL_OPEN = 1,  "Normal open"
+    NORMAL_CLOSE = 2, "Normal close"
+
+
 # Event values
 class VerificationMode(_IntEnumWithDescription):
     NONE = 0,                "None"

@@ -23,11 +23,41 @@ class C3DeviceInfo:
 
 
 @dataclass
+class C3DoorSettings:
+    """C3 panel door configuration and settings"""
+    sensor_type: consts.DoorSensorType = consts.DoorSensorType.NONE
+    """Door sensor type
+    
+    parameter: DoorNSensorType,
+    0: Not available
+    1: Normal open
+    2: Normal closed 
+    """
+    lock_drive_time: int = None
+    """Lock driver time length
+    
+    parameter: DoorNDrivertime,
+    The value range is 0 to 255.
+    0: Normal closed
+    255: Normal open
+    1 to 254: Door-opening duration
+    """
+    door_alarm_timeout: int = None
+    """Timeout alarm duration of door magnet
+    
+    parameter: DoorNDetectortime
+    The value range is 0 to 255,
+    Unit: second
+    """
+
+
+@dataclass
 class C3PanelStatus:
     """C3 panel peripheral status"""
     nr_of_locks: int = 0
     nr_aux_in: int = 0
     nr_aux_out: int = 0
+    door_settings: Dict[int, C3DoorSettings] = field(default_factory=dict)
     lock_status: Dict[int, consts.InOutStatus] = field(default_factory=dict)
     aux_in_status: Dict[int, consts.InOutStatus] = field(default_factory=dict)
     aux_out_status: Dict[int, consts.InOutStatus] = field(default_factory=dict)
@@ -468,6 +498,25 @@ class C3:
                     threading.Timer(command.duration, self._auto_close_aux_out, [command.output_number]).start()
         else:
             raise ConnectionError("No connection to C3 panel.")
+
+    def door_settings(self, door_nr: int) -> C3DoorSettings:
+        """Returns the settings of the door as configured on the panel"""
+        if door_nr in self._status.door_settings:
+            return self._status.door_settings[door_nr]
+        elif not self._status.door_settings:
+            for door_idx in range(self._status.nr_of_locks):
+                door_prefix = f"Door{door_idx+1}"
+                param_values = self.get_device_param(
+                    [door_prefix + p for p in ["SensorType", "Drivertime", "Detectortime"]])
+                if param_values:
+                    self._status.door_settings[door_idx+1] = C3DoorSettings(
+                        sensor_type=param_values.get(door_prefix + "SensorType"),
+                        lock_drive_time=param_values.get(door_prefix + "Drivertime"),
+                        door_alarm_timeout=param_values.get(door_prefix + "Detectortime"))
+
+            return self._status.door_settings[door_nr]
+        else:
+            raise ValueError("Invalid door number specified (%d), 1-%d supported", door_nr, self._status.nr_of_locks)
 
     def lock_status(self, door_nr: int) -> consts.InOutStatus:
         """Returns the (cached) door open/close status.
