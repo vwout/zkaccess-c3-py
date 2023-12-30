@@ -60,6 +60,7 @@ def test_core_connect_response_incomplete():
 def test_core_connect_response_no_data():
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')
+        panel.receive_retries = 1
         mock_socket.return_value.send.return_value = 8
         mock_socket.return_value.recv.side_effect = [
             bytes.fromhex("aa01c80400"), bytes.fromhex("d18a0000915255"),

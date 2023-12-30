@@ -66,10 +66,12 @@ class C3PanelStatus:
 class C3:
     log = logging.getLogger("C3")
     log.setLevel(logging.ERROR)
+    receive_timeout = 1
+    receive_retries = 3
 
     def __init__(self, host: [str | C3DeviceInfo], port: int = consts.C3_PORT_DEFAULT) -> None:
         self._sock: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock.settimeout(2)
+        self._sock.settimeout(self.receive_timeout)
         self._connected: bool = False
         self._session_less = False
         self._initialized = False
@@ -156,8 +158,16 @@ class C3:
 
     def _receive(self) -> tuple[bytearray, int, int]:
         # Get the first 5 bytes
-        self._sock.settimeout(2)
-        header = self._sock.recv(5)
+        self._sock.settimeout(self.receive_timeout)
+
+        header = bytes()
+        for _ in range(self.receive_retries):
+            try:
+                header = self._sock.recv(5)
+                if len(header) == 5:
+                    break
+            except socket.timeout:
+                pass
 
         if len(header) == 5:
             self.log.debug("Received header: %s", header.hex())
