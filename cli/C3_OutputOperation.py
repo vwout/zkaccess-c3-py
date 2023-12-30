@@ -2,9 +2,8 @@
 import argparse
 import logging
 import sys
-from c3 import C3
-from c3 import consts
-from c3 import controldevice
+
+from c3 import C3, consts, controldevice
 
 
 def main():

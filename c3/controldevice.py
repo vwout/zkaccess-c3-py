@@ -34,7 +34,7 @@ class ControlDeviceBase(ABC):
       Param 3: 0 (null)
     Operation 3: Enable/disable normal open state
       Param 1: Door number
-      Param 2: Enable / disable (0: disable, 1: enable'
+      Param 2: Enable / disable (0: disable, 1: enable)
       Param 3: 0 (null)
     """
 

@@ -3,8 +3,8 @@ import argparse
 import logging
 import sys
 import time
-from c3 import C3
-from c3 import rtlog
+
+from c3 import C3, rtlog
 
 
 def main():

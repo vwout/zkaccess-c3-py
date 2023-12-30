@@ -2,6 +2,7 @@
 import argparse
 import logging
 import sys
+
 from c3 import C3
 
 

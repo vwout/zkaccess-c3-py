@@ -7,7 +7,6 @@ import threading
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
-# import consts
 from c3 import consts, controldevice, crc, rtlog, utils
 
 
@@ -182,7 +181,7 @@ class C3:
                 message = self._get_message(header + payload)
 
             if len(message) != data_size:
-                raise ValueError(f"Length of received message ({len(message)}) does not match specified size ({data_size})")
+                raise ValueError(f"Length of received message ({len(message)}) doesn't match specified ({data_size})")
 
             if received_command == consts.C3_REPLY_OK:
                 pass
