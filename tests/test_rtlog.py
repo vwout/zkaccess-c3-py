@@ -129,7 +129,7 @@ def test_rtlog_keyvalue_response(_unused_update_inout_status_mock):
         logs = panel.get_rt_log()
         assert len(logs) == 1
         assert isinstance(logs[0], EventRecord)
-        assert logs[0].door_id == 1
+        assert logs[0].port_nr == 1
         assert logs[0].event_type == EventType.REMOTE_OPENING
         assert logs[0].verified == VerificationMode.OTHER
 

@@ -158,7 +158,7 @@ class EventRecord(RTLogRecord):
         self.card_no = 0
         self.pin = 0
         self.verified: consts.VerificationMode = consts.VerificationMode.NONE
-        self.door_id = 0
+        self.port_nr: int = 0
         self.event_type: consts.EventType = consts.EventType.NA
         self.in_out_state: consts.InOutDirection = consts.InOutDirection.NONE
         self.time_second = 0
@@ -192,7 +192,7 @@ class EventRecord(RTLogRecord):
             record.verified = consts.VerificationMode(data[8])
         except ValueError:
             record.verified = consts.VerificationMode.OTHER
-        record.door_id = data[9]
+        record.port_nr = data[9]
         try:
             record.event_type = consts.EventType(data[10])
         except ValueError:
@@ -226,7 +226,7 @@ class EventRecord(RTLogRecord):
             record.verified = consts.VerificationMode(int(data['verifytype']))
         except ValueError:
             record.verified = consts.VerificationMode.OTHER
-        record.door_id = int(data['eventaddr'])
+        record.port_nr = int(data['eventaddr'])
         try:
             record.event_type = consts.EventType(int(data['event']))
         except ValueError:
@@ -252,7 +252,7 @@ class EventRecord(RTLogRecord):
                     "%-12s %-10s %s" % ("verified", self.verified, repr(self.verified)),
                     "%-12s %-10s" % ("card_no", self.card_no),
                     # "%-12s %-10s" % ("pin", self.pin),
-                    "%-12s %-10s" % ("door_id", self.door_id)]
+                    "%-12s %-10s" % ("port_no", self.port_nr)]
 
         return "\r\n".join(repr_arr)
 

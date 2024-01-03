@@ -162,7 +162,7 @@ def test_core_aux_in_status():
         logs = panel.get_rt_log()
         assert len(logs) == 1
         assert isinstance(logs[0], rtlog.EventRecord)
-        assert logs[0].door_id == 2
+        assert logs[0].port_nr == 2
         assert logs[0].event_type == consts.EventType.AUX_INPUT_SHORT
         assert panel.aux_in_status(1) == consts.InOutStatus.UNKNOWN
         assert panel.aux_in_status(2) == consts.InOutStatus.CLOSED
@@ -172,7 +172,7 @@ def test_core_aux_in_status():
         logs = panel.get_rt_log()
         assert len(logs) == 1
         assert isinstance(logs[0], rtlog.EventRecord)
-        assert logs[0].door_id == 2
+        assert logs[0].port_nr == 2
         assert logs[0].event_type == consts.EventType.AUX_INPUT_DISCONNECT
         assert panel.aux_in_status(1) == consts.InOutStatus.UNKNOWN
         assert panel.aux_in_status(2) == consts.InOutStatus.OPEN
@@ -199,7 +199,7 @@ def test_core_aux_out_status():
         logs = panel.get_rt_log()
         assert len(logs) == 1
         assert isinstance(logs[0], rtlog.EventRecord)
-        assert logs[0].door_id == 2
+        assert logs[0].port_nr == 2
         assert logs[0].event_type == consts.EventType.OPEN_AUX_OUTPUT
         assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
         assert panel.aux_out_status(2) == consts.InOutStatus.OPEN
@@ -209,7 +209,7 @@ def test_core_aux_out_status():
         logs = panel.get_rt_log()
         assert len(logs) == 1
         assert isinstance(logs[0], rtlog.EventRecord)
-        assert logs[0].door_id == 2
+        assert logs[0].port_nr == 2
         assert logs[0].event_type == consts.EventType.CLOSE_AUX_OUTPUT
         assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
         assert panel.aux_out_status(2) == consts.InOutStatus.CLOSED

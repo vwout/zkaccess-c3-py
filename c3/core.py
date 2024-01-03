@@ -448,76 +448,76 @@ class C3:
 
             elif isinstance(log, rtlog.EventRecord):
                 if log.event_type == consts.EventType.OPEN_AUX_OUTPUT:
-                    self._set_aux_out_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                    self._set_aux_out_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=False)
                 elif log.event_type == consts.EventType.CLOSE_AUX_OUTPUT:
-                    self._set_aux_out_status(log.door_id, consts.InOutStatus.CLOSED)
+                    self._set_aux_out_status(log.port_nr, consts.InOutStatus.CLOSED)
 
                 elif log.event_type == consts.EventType.OPENED_ACCIDENT:
                     # Event feedback also expected via DoorAlarmStatusRecord, handling is probably double
-                    self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                    self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=False)
                 elif log.event_type == consts.EventType.DOOR_OPENED_CORRECT:
                     # Event feedback also expected via DoorAlarmStatusRecord, handling is probably double
-                    self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                    self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=False)
                 elif log.event_type == consts.EventType.DOOR_CLOSED_CORRECT:
                     # Event feedback also expected via DoorAlarmStatusRecord, handling is probably double
-                    self._set_lock_status(log.door_id, consts.InOutStatus.CLOSED)
+                    self._set_lock_status(log.port_nr, consts.InOutStatus.CLOSED)
 
                 elif log.event_type == consts.EventType.AUX_INPUT_DISCONNECT:
-                    self._set_aux_in_status(log.door_id, consts.InOutStatus.OPEN)
+                    self._set_aux_in_status(log.port_nr, consts.InOutStatus.OPEN)
                 elif log.event_type == consts.EventType.AUX_INPUT_SHORT:
-                    self._set_aux_in_status(log.door_id, consts.InOutStatus.CLOSED)
+                    self._set_aux_in_status(log.port_nr, consts.InOutStatus.CLOSED)
 
-                elif self.door_settings(log.door_id).sensor_type == consts.DoorSensorType.NONE:
+                elif self.door_settings(log.port_nr).sensor_type == consts.DoorSensorType.NONE:
                     # When the door has no sensor, set the status based on the lock open/close events
 
                     # The lock drive time is used for automatic closing
-                    lock_drive_time = self.door_settings(log.door_id).lock_drive_time
+                    lock_drive_time = self.door_settings(log.port_nr).lock_drive_time
 
                     if log.event_type == consts.EventType.NORMAL_PUNCH_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     # PUNCH_NORMAL_OPEN_TZ
                     # Ignore "Punch during Normal Open Time Zone", door is already open
                     # FIRST_CARD_NORMAL_OPEN
                     # Ingore "First Card Normal Open (Punch Card)", door is already open
                     elif log.event_type == consts.EventType.MULTI_CARD_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.EMERGENCY_PASS_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.OPEN_NORMAL_OPEN_TZ:
                         # Not autoclosing, door is open during normal open time zone
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=False)
                     elif log.event_type == consts.EventType.REMOTE_OPENING:
                         # Remote closing command exected for closing, not setting auto-close
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=False)
                     elif log.event_type == consts.EventType.REMOTE_CLOSING:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.CLOSED)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.CLOSED)
                     elif log.event_type == consts.EventType.PRESS_FINGER_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.MULTI_CARD_OPEN_FP:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     # FP_NORMAL_OPEN_TZ
                     # Ingore "Press Fingerprint during Normal Open Time Zone", door is already open
                     elif log.event_type == consts.EventType.CARD_FP_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.FIRST_CARD_NORMAL_OPEN_FP:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.FIRST_CARD_NORMAL_OPEN_CARD_FP:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.DURESS_PASSWORD_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.DURESS_FP_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.EXIT_BUTTON_OPEN:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.MULTI_CARD_OPEN_CARD_FP:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
                     elif log.event_type == consts.EventType.NORMAL_OPEN_TZ_OVER:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.CLOSED)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.CLOSED)
                     elif log.event_type == consts.EventType.REMOTE_NORMAL_OPEN:
                         # Changes door to normal open, so open until normal open time ends (NORMAL_OPEN_TZ_OVER)
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=False)
                     elif log.event_type == consts.EventType.DOOR_OPEN_BY_SUPERUSER:
-                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                        self._set_lock_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
 
     def get_rt_log(self) -> list[rtlog.EventRecord | rtlog.DoorAlarmStatusRecord]:
         """Retrieve the latest event or alarm records."""
