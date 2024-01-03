@@ -257,7 +257,7 @@ class EventRecord(RTLogRecord):
         return "\r\n".join(repr_arr)
 
 
-def factory(log_message: [bytes, bytearray, dict]) -> RTLogRecord:
+def factory(log_message: [bytes, bytearray, dict]) -> DoorAlarmStatusRecord | EventRecord:
     if isinstance(log_message, (bytes, bytearray)):
         if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
             rtlog = DoorAlarmStatusRecord.from_bytes(log_message)
