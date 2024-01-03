@@ -56,7 +56,8 @@ def test_c3_rtlog_decode_status2():
     print(repr(record))
 
 
-def test_rtlog_unknown_verification_mode():
+@mock.patch.object(C3, '_update_inout_status', new_callable=mock.MagicMock)
+def test_rtlog_unknown_verification_mode(_unused_update_inout_status_mock):
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')
         mock_socket.return_value.send.return_value = 8
@@ -83,7 +84,8 @@ def test_rtlog_unknown_verification_mode():
         assert logs[0].verified == VerificationMode.OTHER
 
 
-def test_rtlog_keyvalue_response():
+@mock.patch.object(C3, '_update_inout_status', new_callable=mock.MagicMock)
+def test_rtlog_keyvalue_response(_unused_update_inout_status_mock):
     with mock.patch('socket.socket') as mock_socket:
         panel = C3('localhost')
         mock_socket.return_value.send.return_value = 8

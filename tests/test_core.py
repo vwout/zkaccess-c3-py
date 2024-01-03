@@ -247,3 +247,86 @@ def test_core_aux_out_open_close():
 
         assert panel.aux_out_status(1) == consts.InOutStatus.UNKNOWN
         assert panel.aux_out_status(2) == consts.InOutStatus.CLOSED
+
+
+def test_core_door_settings():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
+                                                     bytes.fromhex("4d9cfefe9f2655"),
+                                                     bytes.fromhex("aa01c82a00"),
+                                                     bytes.fromhex("4d9cfffe4c6f636b436f756e743d322c417578496e436f75"
+                                                                   "6e743d322c4175784f7574436f756e743d32bb5755")]
+
+        assert panel.connect() is True
+        assert panel.nr_of_locks == 2
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa00c83d00"),
+                                                     bytes.fromhex("4d9c08ff446f6f723153656e736f72547970653d322c446f"
+                                                                   "6f723144726976657274696d653d312c446f6f7231446574"
+                                                                   "6563746f7274696d653d323530b18d55"),
+                                                     bytes.fromhex("aa00c83c00"),
+                                                     bytes.fromhex("4d9c09ff446f6f723253656e736f72547970653d302c446f"
+                                                                   "6f723244726976657274696d653d352c446f6f7232446574"
+                                                                   "6563746f7274696d653d3135158355")]
+
+        assert panel.door_settings(1).sensor_type == consts.DoorSensorType.NORMAL_CLOSE
+        assert panel.door_settings(1).lock_drive_time == 1
+        assert panel.door_settings(1).door_alarm_timeout == 250
+        assert panel.door_settings(2).sensor_type == consts.DoorSensorType.NONE
+        assert panel.door_settings(2).lock_drive_time == 5
+        assert panel.door_settings(2).door_alarm_timeout == 15
+
+
+def test_core_update_inout_status_exit_button():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa01c80400"),
+                                                     bytes.fromhex("4d9cfefe9f2655"),
+                                                     bytes.fromhex("aa01c82a00"),
+                                                     bytes.fromhex("4d9cfffe4c6f636b436f756e743d322c417578496e436f75"
+                                                                   "6e743d322c4175784f7574436f756e743d32bb5755")]
+
+        assert panel.connect() is True
+        assert panel.nr_of_locks == 2
+        assert panel.lock_status(1) == consts.InOutStatus.UNKNOWN
+        assert panel.lock_status(2) == consts.InOutStatus.UNKNOWN
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa00c81400"),
+                                                     bytes.fromhex("4d9c06ff03000000111000000001ff0013ecfd2d4ae555")]
+
+        panel.get_rt_log()
+        assert panel.lock_status(1) == consts.InOutStatus.CLOSED
+        assert panel.lock_status(2) == consts.InOutStatus.UNKNOWN
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa00c81400"),
+                                                     bytes.fromhex("4d9c07ff0000000000000000c802ca0215ecfd2d710f55"),
+                                                     bytes.fromhex("aa00c83d00"),
+                                                     bytes.fromhex("4d9c08ff446f6f723153656e736f72547970653d322c446f"
+                                                                   "6f723144726976657274696d653d312c446f6f7231446574"
+                                                                   "6563746f7274696d653d323530b18d55"),
+                                                     bytes.fromhex("aa00c83c00"),
+                                                     bytes.fromhex("4d9c09ff446f6f723253656e736f72547970653d302c446f"
+                                                                   "6f723244726976657274696d653d312c446f6f7232446574"
+                                                                   "6563746f7274696d653d3135507055")]
+
+        panel.get_rt_log()
+        assert panel.lock_status(1) == consts.InOutStatus.CLOSED
+        assert panel.lock_status(2) == consts.InOutStatus.OPEN
+        assert panel.door_settings(2).sensor_type == consts.DoorSensorType.NONE
+        assert panel.door_settings(2).lock_drive_time == 1
+
+        time.sleep(panel.door_settings(2).lock_drive_time + 0.1)
+
+        assert panel.lock_status(2) == consts.InOutStatus.CLOSED
+
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa00c81400"),
+                                                     bytes.fromhex("4d9c06ff03000000111000000001ff0013ecfd2d4ae555")]
+
+        # Subsequent DoorAlarmStatus logs with door 2 status 'unknown' are ignored,
+        # last-known status better than unknown is used
+        panel.get_rt_log()
+        assert panel.lock_status(1) == consts.InOutStatus.CLOSED
+        assert panel.lock_status(2) == consts.InOutStatus.CLOSED

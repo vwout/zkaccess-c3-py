@@ -443,17 +443,81 @@ class C3:
     def _update_inout_status(self, logs: list[rtlog.RTLogRecord]):
         for log in logs:
             if isinstance(log, rtlog.DoorAlarmStatusRecord):
-                for lock_nr in range(1, self._status.nr_of_locks+1):
-                    self._status.lock_status[lock_nr] = log.door_sensor_status(lock_nr)
+                for lock_nr in range(1, self.nr_of_locks+1):
+                    self._set_lock_status(lock_nr, log.door_sensor_status(lock_nr), auto_close=False)
+
             elif isinstance(log, rtlog.EventRecord):
                 if log.event_type == consts.EventType.OPEN_AUX_OUTPUT:
-                    self._status.aux_out_status[log.door_id] = consts.InOutStatus.OPEN
+                    self._set_aux_out_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
                 elif log.event_type == consts.EventType.CLOSE_AUX_OUTPUT:
-                    self._status.aux_out_status[log.door_id] = consts.InOutStatus.CLOSED
+                    self._set_aux_out_status(log.door_id, consts.InOutStatus.CLOSED)
+
+                elif log.event_type == consts.EventType.OPENED_ACCIDENT:
+                    # Event feedback also expected via DoorAlarmStatusRecord, handling is probably double
+                    self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                elif log.event_type == consts.EventType.DOOR_OPENED_CORRECT:
+                    # Event feedback also expected via DoorAlarmStatusRecord, handling is probably double
+                    self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                elif log.event_type == consts.EventType.DOOR_CLOSED_CORRECT:
+                    # Event feedback also expected via DoorAlarmStatusRecord, handling is probably double
+                    self._set_lock_status(log.door_id, consts.InOutStatus.CLOSED)
+
                 elif log.event_type == consts.EventType.AUX_INPUT_DISCONNECT:
-                    self._status.aux_in_status[log.door_id] = consts.InOutStatus.OPEN
+                    self._set_aux_in_status(log.door_id, consts.InOutStatus.OPEN)
                 elif log.event_type == consts.EventType.AUX_INPUT_SHORT:
-                    self._status.aux_in_status[log.door_id] = consts.InOutStatus.CLOSED
+                    self._set_aux_in_status(log.door_id, consts.InOutStatus.CLOSED)
+
+                elif self.door_settings(log.door_id).sensor_type == consts.DoorSensorType.NONE:
+                    # When the door has no sensor, set the status based on the lock open/close events
+
+                    # The lock drive time is used for automatic closing
+                    lock_drive_time = self.door_settings(log.door_id).lock_drive_time
+
+                    if log.event_type == consts.EventType.NORMAL_PUNCH_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    # PUNCH_NORMAL_OPEN_TZ
+                    # Ignore "Punch during Normal Open Time Zone", door is already open
+                    # FIRST_CARD_NORMAL_OPEN
+                    # Ingore "First Card Normal Open (Punch Card)", door is already open
+                    elif log.event_type == consts.EventType.MULTI_CARD_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.EMERGENCY_PASS_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.OPEN_NORMAL_OPEN_TZ:
+                        # Not autoclosing, door is open during normal open time zone
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                    elif log.event_type == consts.EventType.REMOTE_OPENING:
+                        # Remote closing command exected for closing, not setting auto-close
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                    elif log.event_type == consts.EventType.REMOTE_CLOSING:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.CLOSED)
+                    elif log.event_type == consts.EventType.PRESS_FINGER_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.MULTI_CARD_OPEN_FP:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    # FP_NORMAL_OPEN_TZ
+                    # Ingore "Press Fingerprint during Normal Open Time Zone", door is already open
+                    elif log.event_type == consts.EventType.CARD_FP_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.FIRST_CARD_NORMAL_OPEN_FP:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.FIRST_CARD_NORMAL_OPEN_CARD_FP:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.DURESS_PASSWORD_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.DURESS_FP_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.EXIT_BUTTON_OPEN:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.MULTI_CARD_OPEN_CARD_FP:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
+                    elif log.event_type == consts.EventType.NORMAL_OPEN_TZ_OVER:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.CLOSED)
+                    elif log.event_type == consts.EventType.REMOTE_NORMAL_OPEN:
+                        # Changes door to normal open, so open until normal open time ends (NORMAL_OPEN_TZ_OVER)
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=False)
+                    elif log.event_type == consts.EventType.DOOR_OPEN_BY_SUPERUSER:
+                        self._set_lock_status(log.door_id, consts.InOutStatus.OPEN, auto_close=lock_drive_time)
 
     def get_rt_log(self) -> list[rtlog.EventRecord | rtlog.DoorAlarmStatusRecord]:
         """Retrieve the latest event or alarm records."""
@@ -488,11 +552,46 @@ class C3:
 
         return records
 
+    def _set_lock_status(self, door_nr: int, status: consts.InOutStatus, auto_close: bool | int = False) -> None:
+        """Set the specified door lock status and optionally performs automatic close after specified timeout."""
+
+        # Update the status only when status is more specific than unknown, or when no status is recorded at all
+        if not status == consts.InOutStatus.UNKNOWN or door_nr not in self._status.lock_status:
+            self._status.lock_status[door_nr] = status
+
+        if status == consts.InOutStatus.OPEN and ((auto_close or 0) > 0):
+            threading.Timer(auto_close, self._set_lock_status, [door_nr, consts.InOutStatus.CLOSED]).start()
+
+    def _auto_close_lock(self, door_nr: int) -> None:
+        """Set the specified door lock to closed.
+
+        The C3 does not send an event to update the door lock activation status, only the sensor status.
+        This means the lock (or alternatively the door) status is not updated for doors without sensor.
+        This function is triggered by an automatic internal timer to set the lock state to closed."""
+        self._status.lock_status[door_nr] = consts.InOutStatus.CLOSED
+
+    def _set_aux_in_status(self, aux_nr: int, status: consts.InOutStatus) -> None:
+        """Set the specified auxiliary input status"""
+
+        # Update the status only when status is more specific than unknown, or when no status is recorded at all
+        if not status == consts.InOutStatus.UNKNOWN or aux_nr not in self._status.aux_in_status:
+            self._status.aux_in_status[aux_nr] = status
+
+    def _set_aux_out_status(self, aux_nr: int, status: consts.InOutStatus, auto_close: bool | int = False) -> None:
+        """Set the specified auxiliary output status and optionally performs automatic close after specified timeout."""
+
+        # Update the status only when status is more specific than unknown, or when no status is recorded at all
+        if not status == consts.InOutStatus.UNKNOWN or aux_nr not in self._status.aux_out_status:
+            self._status.aux_out_status[aux_nr] = status
+
+        if status == consts.InOutStatus.OPEN and ((auto_close or 0) > 0):
+            threading.Timer(auto_close, self._set_aux_out_status, [aux_nr, consts.InOutStatus.CLOSED]).start()
+
     def _auto_close_aux_out(self, aux_nr: int) -> None:
         """Set the specified auxiliary output to closed.
 
         The C3 does not send an event when an auxiliary output closes after a certain duration.
-        This function is trigger by an automatic internal timer to set the internal state to closed."""
+        This function is triggered by an automatic internal timer to set the aux state to closed."""
         self._status.aux_out_status[aux_nr] = consts.InOutStatus.CLOSED
 
     def control_device(self, command: controldevice.ControlDeviceBase):
@@ -501,10 +600,12 @@ class C3:
             self._send_receive(consts.Command.CONTROL, command.to_bytes())
 
             if isinstance(command, controldevice.ControlDeviceOutput):
-                if command.operation == consts.ControlOperation.OUTPUT and \
-                        command.address == consts.ControlOutputAddress.AUX_OUTPUT and \
-                        command.duration < 255:
-                    threading.Timer(command.duration, self._auto_close_aux_out, [command.output_number]).start()
+                if command.operation == consts.ControlOperation.OUTPUT and command.duration < 255:
+                    if command.address == consts.ControlOutputAddress.DOOR_OUTPUT and \
+                            self.door_settings(command.output_number).sensor_type == consts.DoorSensorType.NONE:
+                        threading.Timer(command.duration, self._auto_close_lock, [command.output_number]).start()
+                    if command.address == consts.ControlOutputAddress.AUX_OUTPUT:
+                        threading.Timer(command.duration, self._auto_close_aux_out, [command.output_number]).start()
         else:
             raise ConnectionError("No connection to C3 panel.")
 
@@ -519,9 +620,9 @@ class C3:
                     [door_prefix + p for p in ["SensorType", "Drivertime", "Detectortime"]])
                 if param_values:
                     self._status.door_settings[door_idx+1] = C3DoorSettings(
-                        sensor_type=param_values.get(door_prefix + "SensorType"),
-                        lock_drive_time=param_values.get(door_prefix + "Drivertime"),
-                        door_alarm_timeout=param_values.get(door_prefix + "Detectortime"))
+                        sensor_type=consts.DoorSensorType(int(param_values.get(door_prefix + "SensorType"))),
+                        lock_drive_time=int(param_values.get(door_prefix + "Drivertime")),
+                        door_alarm_timeout=int(param_values.get(door_prefix + "Detectortime")))
 
             return self._status.door_settings[door_nr]
         else:

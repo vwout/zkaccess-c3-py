@@ -38,8 +38,13 @@ def main():
                     if isinstance(record, rtlog.DoorAlarmStatusRecord):
                         last_record_is_status = True
 
+                print(f"Door status: {[repr(panel.lock_status(i+1)) for i in range(panel.nr_of_locks)]}:")
+                print(f"Aux status: {[repr(panel.aux_out_status(i+1)) for i in range(panel.nr_aux_out)]}:")
+
                 if last_record_is_status:
                     time.sleep(9)
+
+                print("-" * 25)
 
                 time.sleep(1)
         except KeyboardInterrupt:
