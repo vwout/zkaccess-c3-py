@@ -446,7 +446,7 @@ class C3:
                 for lock_nr in range(1, self.nr_of_locks+1):
                     self._set_lock_status(lock_nr, log.door_sensor_status(lock_nr), auto_close=False)
 
-            elif isinstance(log, rtlog.EventRecord):
+            elif isinstance(log, rtlog.EventRecord) and log.port_nr-1 in range(self.nr_of_locks):
                 if log.event_type == consts.EventType.OPEN_AUX_OUTPUT:
                     self._set_aux_out_status(log.port_nr, consts.InOutStatus.OPEN, auto_close=False)
                 elif log.event_type == consts.EventType.CLOSE_AUX_OUTPUT:
