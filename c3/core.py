@@ -375,40 +375,49 @@ class C3:
         if password:
             data = bytearray(password.encode('ascii'))
 
-        # Attempt to connect to panel with session initiation command
+        # Recreate a socket when it has been removed in disconnect method because of an error
+        if self._sock is None:
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         try:
             self._sock.connect((self._device_info.host, self._device_info.port))
-            bytes_written = self._send(consts.Command.CONNECT_SESSION, data)
-            if bytes_written > 0:
-                receive_data, bytes_received, protocol_version = self._receive()
-                if bytes_received > 2:
-                    self._session_id = (receive_data[1] << 8) + receive_data[0]
-                    self.log.debug("Connected with Session ID %04x", self._session_id)
-                    self._session_less = False
-                    self._protocol_version = protocol_version
-                    self._connected = True
-        except ConnectionError as ex:
-            self.log.debug("Connection attempt with session to %s failed: %s", self._device_info.host, ex)
-        except ValueError as ex:
-            self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
+        except socket.error as ex:
+            self.log.error("Error while opening socket: %s", str(ex))
+            self._sock = None
 
-        # Alternatively attempt to connect to panel without session initiation
-        if not self._connected:
+        if self._sock is not None:
+            # Attempt to connect to panel with session initiation command
             try:
-                self._session_id = None
-                self._sock.connect((self._device_info.host, self._device_info.port))
-                bytes_written = self._send(consts.Command.CONNECT_SESSION_LESS, data)
+                bytes_written = self._send(consts.Command.CONNECT_SESSION, data)
                 if bytes_written > 0:
-                    _, _, protocol_version = self._receive()
-                    self.log.debug("Connected without session")
-                    self._session_less = True
-                    self._protocol_version = protocol_version
-                    self._connected = True
+                    receive_data, bytes_received, protocol_version = self._receive()
+                    if bytes_received > 2:
+                        self._session_id = (receive_data[1] << 8) + receive_data[0]
+                        self.log.debug("Connected with Session ID %04x", self._session_id)
+                        self._session_less = False
+                        self._protocol_version = protocol_version
+                        self._connected = True
             except ConnectionError as ex:
-                self.log.debug("Connection attempt without session to %s failed: %s",
-                               self._device_info.host, ex)
+                self.log.debug("Connection attempt with session to %s failed: %s", self._device_info.host, ex)
             except ValueError as ex:
                 self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
+
+            # Alternatively attempt to connect to panel without session initiation
+            if not self._connected:
+                try:
+                    self._session_id = None
+                    bytes_written = self._send(consts.Command.CONNECT_SESSION_LESS, data)
+                    if bytes_written > 0:
+                        _, _, protocol_version = self._receive()
+                        self.log.debug("Connected without session")
+                        self._session_less = True
+                        self._protocol_version = protocol_version
+                        self._connected = True
+                except ConnectionError as ex:
+                    self.log.debug("Connection attempt without session to %s failed: %s",
+                                   self._device_info.host, ex)
+                except ValueError as ex:
+                    self.log.error("Reply from %s failed: %s", self._device_info.host, ex)
 
         if self._connected:
             self._initialize()
@@ -424,7 +433,13 @@ class C3:
                 # Disconnecting a broken connection should not create more trouble,
                 # ignoring a ConnectionError for that reason.
                 pass
-            self._sock.close()
+
+            if self._sock is not None:
+                try:
+                    self._sock.close()
+                except socket.error as ex:
+                    self.log.error("Error while closing socket: %s", str(ex))
+                    self._sock = None
 
         self._connected = False
         self._session_id = None
