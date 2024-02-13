@@ -245,7 +245,7 @@ class C3:
         #    return False  # socket was closed for some other reason
         # except Exception as e:
         #    return False
-        return self._connected
+        return self._sock is not None and self._connected
 
     @classmethod
     def _parse_kv_from_message(cls, message: bytes) -> dict:
@@ -439,7 +439,7 @@ class C3:
                     self._sock.close()
                 except socket.error as ex:
                     self.log.error("Error while closing socket: %s", str(ex))
-                    self._sock = None
+                self._sock = None
 
         self._connected = False
         self._session_id = None
