@@ -11,12 +11,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('host', help='C3 panel IP address or host name')
     parser.add_argument('--password', help='Password')
+    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
     panel = C3(args.host)
-    panel.log.addHandler(logging.StreamHandler(sys.stdout))
-    panel.log.setLevel(logging.DEBUG)
+
+    if args.debug:
+        panel.log.addHandler(logging.StreamHandler(sys.stdout))
+        panel.log.setLevel(logging.DEBUG)
 
     if panel.connect(args.password):
         try:

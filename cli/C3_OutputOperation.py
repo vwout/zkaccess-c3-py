@@ -16,6 +16,7 @@ def main():
     group.add_argument('--open', action="store_true", help='Set state to normal open')
     group.add_argument('--close', action="store_true", help='Set state to closed')
     parser.add_argument('--duration', type=int, help='Duration to (temporarily) open the door')
+    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
     args = parser.parse_args()
 
     duration = 0
@@ -24,8 +25,10 @@ def main():
 
     print("Connecting to %s" % args.host)
     panel = C3(args.host)
-    panel.log.addHandler(logging.StreamHandler(sys.stdout))
-    panel.log.setLevel(logging.DEBUG)
+
+    if args.debug:
+        panel.log.addHandler(logging.StreamHandler(sys.stdout))
+        panel.log.setLevel(logging.DEBUG)
 
     try:
         if panel.connect(args.password):
