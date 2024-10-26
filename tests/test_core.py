@@ -8,6 +8,35 @@ from c3 import consts
 from c3 import controldevice
 
 
+@pytest.fixture
+def data_cfg_response_data() -> str:
+    return ("4ac70200757365723d312c5549443d69312c436172644e6f3d69322c50696e3d69332c50617373776f72643d73342c47"
+            "726f75703d69352c537461727454696d653d69362c456e6454696d653d69372c4e616d653d73382c5375706572417574"
+            "686f72697a653d69390a75736572617574686f72697a653d322c50696e3d69312c417574686f72697a6554696d657a6f"
+            "6e6549643d69322c417574686f72697a65446f6f7249643d69330a686f6c696461793d332c486f6c696461793d69312c"
+            "486f6c69646179547970653d69322c4c6f6f703d69330a74696d657a6f6e653d342c54696d657a6f6e6549643d69312c"
+            "53756e54696d65313d69322c53756e54696d65323d69332c53756e54696d65333d69342c4d6f6e54696d65313d69352c"
+            "4d6f6e54696d65323d69362c4d6f6e54696d65333d69372c54756554696d65313d69382c54756554696d65323d69392c"
+            "54756554696d65333d6931302c57656454696d65313d6931312c57656454696d65323d6931322c57656454696d65333d"
+            "6931332c54687554696d65313d6931342c54687554696d65323d6931352c54687554696d65333d6931362c4672695469"
+            "6d65313d6931372c46726954696d65323d6931382c46726954696d65333d6931392c53617454696d65313d6932302c53"
+            "617454696d65323d6932312c53617454696d65333d6932322c486f6c3154696d65313d6932332c486f6c3154696d6532"
+            "3d6932342c486f6c3154696d65333d6932352c486f6c3254696d65313d6932362c486f6c3254696d65323d6932372c48"
+            "6f6c3254696d65333d6932382c486f6c3354696d65313d6932392c486f6c3354696d65323d6933302c486f6c3354696d"
+            "65333d6933310a7472616e73616374696f6e3d352c436172646e6f3d69312c50696e3d69322c56657269666965643d69"
+            "332c446f6f7249443d69342c4576656e74547970653d69352c496e4f757453746174653d69362c54696d655f7365636f"
+            "6e643d69370a6669727374636172643d362c50696e3d69312c446f6f7249443d69322c54696d657a6f6e6549443d6933"
+            "0a6d756c74696d636172643d372c496e6465783d69312c446f6f7249643d69322c47726f7570313d69332c47726f7570"
+            "323d69342c47726f7570333d69352c47726f7570343d69362c47726f7570353d69370a696e6f757466756e3d382c496e"
+            "6465783d69312c4576656e74547970653d69322c496e416464723d69332c4f7574547970653d69342c4f757441646472"
+            "3d69352c4f757454696d653d69362c52657365727665643d69370a74656d706c6174653d392c53697a653d69312c5069"
+            "6e3d69322c46696e67657249443d69332c56616c69643d69342c54656d706c6174653d73350a74656d706c6174657631"
+            "303d31302c53697a653d69312c5549443d69322c50696e3d69332c46696e67657249443d69342c56616c69643d69352c"
+            "54656d706c6174653d42362c526573766572643d69372c456e645461673d69380a6c6f7373636172643d31312c436172"
+            "644e6f3d69312c52657365727665643d69320a75736572747970653d31322c50696e3d69312c547970653d69320a7769"
+            "6567616e64666d743d31332c50696e3d69312c4e616d653d73322c5767436f756e743d69332c466f726d61743d73340a70c055")
+
+
 def test_core_init():
     panel = C3('localhost')
     assert panel.nr_of_locks == 0
@@ -39,6 +68,62 @@ def test_core_get_device_param():
         assert params["ReaderCount"] == "4"
         assert params["AuxInCount"] == "2"
         assert params["AuxOutCount"] == "2"
+
+
+def test_core_get_device_data_cfg(data_cfg_response_data):
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa00c80400"), bytes.fromhex("4ac70100ee3d55"),
+            bytes.fromhex("aa01c80200"), bytes.fromhex("4ac797c355")
+        ]
+
+        assert panel.connect() is True
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa00c8b004"),
+                                                     bytes.fromhex(data_cfg_response_data)]
+
+        data_cfg = panel._get_device_data_cfg()
+        assert len(data_cfg) == 13
+        user_cfg = data_cfg[0]
+        assert user_cfg.name == "user"
+        assert user_cfg.index == 1
+        assert len(user_cfg.fields) == 9
+        assert user_cfg.fields[5].name == "StartTime"
+        assert user_cfg.fields[5].type == "i"
+        assert user_cfg.fields[5].index == 6
+        assert user_cfg.fields[7].name == "Name"
+        assert user_cfg.fields[7].type == "s"
+        assert user_cfg.fields[7].index == 8
+
+
+def test_core_get_device_data_user(data_cfg_response_data):
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa00c80400"), bytes.fromhex("4ac70100ee3d55"),
+            bytes.fromhex("aa01c80200"), bytes.fromhex("4ac797c355")
+        ]
+
+        assert panel.connect() is True
+        mock_socket.return_value.recv.side_effect = [bytes.fromhex("aa00c8b004"),
+                                                     bytes.fromhex(data_cfg_response_data),
+                                                     bytes.fromhex("aa00c83d00"),
+                                                     bytes.fromhex(
+                                                         "4ac70400"
+                                                         "0109010203040506070809"
+                                                         "01010387D6120376543200010001000100000100"
+                                                         "010203a1a3a303b1b2b3000100042a893401049fb03401000100"
+                                                         "b44b55")
+                                                     ]
+
+        user_data = panel.get_device_data(table_name="user")
+        assert len(user_data) == 2
+        assert user_data[0]["UID"] == 1
+        assert user_data[0]["CardNo"] == 1234567
+        assert user_data[1]["StartTime"] == 20220202
+        assert user_data[1]["EndTime"] == 20230303
 
 
 def test_core_connect_response_incomplete():

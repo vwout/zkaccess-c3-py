@@ -62,6 +62,29 @@ class C3PanelStatus:
     aux_out_status: Dict[int, consts.InOutStatus] = field(default_factory=dict)
 
 
+@dataclass
+class _DataTableCfgField:
+    name: str = ""
+    type: str = ""
+    index: int = 0
+
+
+@dataclass
+class _DataTableCfg:
+    name: str = ""
+    index: int = 0
+    fields: list[_DataTableCfgField] = field(default_factory=list)
+
+    def __init__(self, data_cfg_kv: dict):
+        if data_cfg_kv:
+            (name, index), *fields = data_cfg_kv.items()
+            self.name = name
+            self.index = int(index)
+            self.fields = [_DataTableCfgField(name=field_name,
+                                              type=field_typedef[0],
+                                              index=int(field_typedef[1:])) for (field_name, field_typedef) in fields]
+
+
 class C3:
     log = logging.getLogger("C3")
     log.setLevel(logging.ERROR)
@@ -454,6 +477,81 @@ class C3:
             raise ConnectionError("No connection to C3 panel.")
 
         return parameter_values
+
+    def _get_device_data_cfg(self) -> list[_DataTableCfg]:
+        data_cfg = []
+
+        if self.is_connected():
+            message, _ = self._send_receive(consts.Command.DATATABLE_CFG)
+            # get the individual table configuration, that is split using a newline (\n)
+            for message_line in message.split(b'\x0a'):
+                data_items = self._parse_kv_from_message(message_line)
+                if data_items:
+                    data_cfg.append(_DataTableCfg(data_items))
+        else:
+            raise ConnectionError("No connection to C3 panel.")
+
+        return data_cfg
+
+    def get_device_data(self, table_name: str, field_names: Optional[list[str]] = None) -> list[dict]:
+        data_cfg = self._get_device_data_cfg()
+        device_data = []
+
+        cfg = next((c for c in data_cfg if c.name == table_name), None)
+        if cfg:
+            data_fields = [f.name for f in cfg.fields]
+            if field_names:
+                valid_fields = [f for f in field_names if f in data_fields]
+                if not len(valid_fields) == len(field_names):
+                    raise ValueError("Not all fields are available (%s), choose from %s" %
+                                     (",".join([f for f in field_names if f not in data_fields]),
+                                      ",".join([f for f in data_fields])))
+            else:
+                field_names = data_fields
+            field_indexes = [f.index for f in cfg.fields if f.name in field_names]
+            field_indexes.sort()
+
+            # Construct the parameters for the GETDATA command.
+            # This consists of:
+            # - the index of the table to retrieve
+            # - the number of fields to retrieve
+            # - the indexes of the fields to retrieve
+            # - two bytes set to 0 - purpose or meaning unknown
+            parameters = [cfg.index, len(field_indexes)] + field_indexes + [0, 0]
+            message, _ = self._send_receive(consts.Command.GETDATA, parameters)
+            if message[0] == cfg.index:
+                response_field_cnt = message[1]
+                response_field_indexes = message[2:2+response_field_cnt]
+                response_data = message[2+response_field_cnt:]
+                while response_data:
+                    device_data_record = {}
+
+                    for response_field_index in response_field_indexes:
+                        response_field = next((f for f in cfg.fields if f.index == response_field_index), None)
+                        if response_field:
+                            field_size = response_data[0]
+                            if response_field.type == "i":
+                                device_data_record[response_field.name] = (
+                                    int.from_bytes(response_data[1:1+field_size], "little"))
+                            elif response_field.type == "s":
+                                device_data_record[response_field.name] = (
+                                    response_data[1:1 + field_size].decode(encoding='ascii', errors='ignore'))
+                            else:
+                                ValueError("Unsupported type %s for field %s" % (response_field.type,
+                                                                                 response_field.name))
+
+                            response_data = response_data[1+field_size:]
+                        else:
+                            raise ValueError("Unknown field index returned by panel: %d" % response_field_index)
+
+                    device_data.append(device_data_record)
+            else:
+                raise ValueError("Wrong table returned by panel. Expected %d, received %d" % (cfg.index, message[0]))
+        else:
+            raise ValueError("Table '%s' is not available, use one of: %s" %
+                             (table_name, ",".join([cfg.name for cfg in data_cfg])))
+
+        return device_data
 
     def _update_inout_status(self, logs: list[rtlog.RTLogRecord]):
         for log in logs:

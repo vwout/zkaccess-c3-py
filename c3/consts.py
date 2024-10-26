@@ -14,14 +14,15 @@ C3_DISCOVERY_MESSAGE = "CallSecurityDevice"
 
 class Command(IntEnum):
     """Enumeration of supported device_name interaction commands"""
-    DISCOVER = 0x14
-    CONNECT_SESSION = 0x76
     CONNECT_SESSION_LESS = 0x01
     DISCONNECT = 0x02
     GETPARAM = 0x04
-    DATATABLE_CFG = 0x06
     CONTROL = 0x05
+    DATATABLE_CFG = 0x06
+    GETDATA = 0x08
     RTLOG_BINARY = 0x0B
+    DISCOVER = 0x14
+    CONNECT_SESSION = 0x76
     RTLOG_KEYVALUE = 0x79
 
 
