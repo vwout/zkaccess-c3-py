@@ -17,6 +17,7 @@ class Command(IntEnum):
     """Enumeration of supported device_name interaction commands"""
     CONNECT_SESSION_LESS = 0x01
     DISCONNECT = 0x02
+    DATETIME = 0x03
     GETPARAM = 0x04
     CONTROL = 0x05
     DATATABLE_CFG = 0x06
