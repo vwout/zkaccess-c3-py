@@ -1,4 +1,5 @@
 from unittest import mock
+from datetime import datetime
 import time
 import pytest
 
@@ -45,6 +46,24 @@ def test_core_init():
     assert panel.lock_status(1) == consts.InOutStatus.UNKNOWN
     assert panel.aux_in_status(1) == consts.InOutStatus.UNKNOWN
     assert panel.aux_out_status(2) == consts.InOutStatus.UNKNOWN
+
+
+def test_core_set_device_datetime():
+    with mock.patch('socket.socket') as mock_socket:
+        panel = C3('localhost')
+        mock_socket.return_value.send.return_value = 8
+        mock_socket.return_value.recv.side_effect = [
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a0000915255"),
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a000055"),
+            bytes.fromhex("aa01c80400"), bytes.fromhex("d18a0003d15355")
+        ]
+
+        assert panel.connect() is True
+        test_time = datetime(2025, 4, 13, hour=15, minute=54, second=12)
+        panel.set_device_datetime(test_time)
+
+        assert mock_socket.return_value.send.call_count == 3
+        mock_socket.return_value.send.assert_any_call(bytearray(b'\xaa\x01\x03\x16\x00\xd1\x8a\x00\xffDateTime=812649252\x05>U'))
 
 
 def test_core_get_device_param():

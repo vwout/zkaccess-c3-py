@@ -5,6 +5,7 @@ import re
 import socket
 import threading
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Dict, Optional
 
 from c3 import consts, controldevice, crc, rtlog, utils
@@ -281,6 +282,12 @@ class C3:
 
         return kv_pairs
 
+    @classmethod
+    def _kv_to_message(cls, data: dict):
+        kv_array = ["{0}={1}".format(k, v) for k, v in data.items()]
+        kv_str = ",".join(kv_array)
+        return kv_str.encode(encoding='ascii', errors='ignore')
+
     def __repr__(self):
         return "\r\n".join([
             f"- Host: {self.host} @ {self.port}",
@@ -467,6 +474,17 @@ class C3:
         self._connected = False
         self._session_id = None
         self._request_nr: -258
+
+    def set_device_datetime(self, time: Optional[datetime] = None):
+        """Send a control command to the panel."""
+        time = time or datetime.now()
+        time_seconds = utils.C3DateTime(year=time.year, month=time.month, day=time.day, hour=time.hour,
+                                        minute=time.minute, second=time.second)
+
+        if self.is_connected():
+            self._send_receive(consts.Command.DATETIME, self._kv_to_message({"DateTime": time_seconds.to_value()}))
+        else:
+            raise ConnectionError("No connection to C3 panel.")
 
     def get_device_param(self, request_parameters: list[str]) -> dict:
         """Retrieve the requested device parameter values."""

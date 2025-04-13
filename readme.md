@@ -47,10 +47,16 @@ The wire protocol for the access panels is binary, with the following datagram b
   | Code   | Command                                            |
   |--------|----------------------------------------------------|
   | `0x01` | Connect (without session initiation)               |
-  | `0x76` | Connect (session initiation)                       |
-  | `0x02` | Disconnection (session end)                        |
+  | `0x02` | Disconnect                                         |
+  | `0x03` | Set datetime                                       |
+  | `0x04` | Get parameters                                     |
   | `0x05` | Device control command                             |
+  | `0x06` | Get datatable configuration                        |
+  | `0x08` | Retrieve data from datatable                       |
   | `0x0B` | Retrieve realtime log                              |
+  | `0x14` | Device discovery                                   |
+  | `0x76` | Connect (session initiation)                       |
+  | `0x79` | Realtime log key-values                            |
   | `0xC8` | Response (confirm successful execution of command) |
 
 - The *Length* field (2 bytes, in Little Endian encoding) contains the number of bytes of the *Data* field.
@@ -85,6 +91,13 @@ disconnect()
 ```
 
 Disconnects from the C3 access panel and ends the session.
+
+### SetDeviceDatetime
+```
+set_device_datetime(self, time)
+```
+Sets the device date/time as ISO timestamp.
+
 
 ### SetDeviceParam
 Not implemented yet.
