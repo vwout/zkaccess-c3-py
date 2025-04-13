@@ -24,9 +24,9 @@ class Crc16Builder:
         return poly
 
     def add_byte(self, data: int):
-        data = data & 0xFF        # Limit data size to byte
+        data = data & 0xFF  # Limit data size to byte
         crc = self._crc & 0xFFFF  # Truncate to 16bit
-        msb = crc >> 8            # Take msb from 16bit crc
+        msb = crc >> 8  # Take msb from 16bit crc
         self._crc = msb ^ self._calc_divisor(crc ^ data)
 
     @property
@@ -37,7 +37,7 @@ class Crc16Builder:
 def crc16(data, crc=None):
     builder = Crc16Builder(crc)
 
-    if hasattr(data, '__iter__'):
+    if hasattr(data, "__iter__"):
         for byte in data:
             if isinstance(byte, int):
                 builder.add_byte(byte)

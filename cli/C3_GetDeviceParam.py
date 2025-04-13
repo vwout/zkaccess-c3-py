@@ -9,10 +9,14 @@ from c3.utils import C3DateTime
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('host', help='C3 panel IP address or host name')
-    parser.add_argument('--password', help='Password')
-    parser.add_argument('--param', nargs='+', help='Parameter name(s) to request')
-    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
+    parser.add_argument("host", help="C3 panel IP address or host name")
+    parser.add_argument("--password", help="Password")
+    parser.add_argument("--param", nargs="+", help="Parameter name(s) to request")
+    parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        help="Enable verbose debug output",
+    )
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
@@ -27,20 +31,25 @@ def main():
             print("Device:")
             print(repr(panel))
 
-            param_names = args.param or ["~ZKFPVersion",
-                                         "~SerialNumber",
-                                         "FirmVer",
-                                         "DeviceName",
-                                         "LockCount",
-                                         "ReaderCount",
-                                         "AuxInCount",
-                                         "AuxOutCount",
-                                         "DateTime"]
+            param_names = args.param or [
+                "~ZKFPVersion",
+                "~SerialNumber",
+                "FirmVer",
+                "DeviceName",
+                "LockCount",
+                "ReaderCount",
+                "AuxInCount",
+                "AuxOutCount",
+                "DateTime",
+            ]
             params = panel.get_device_param(param_names)
 
             for k in params:
                 if k == "DateTime":
-                    print("- %s: %s" % (k, C3DateTime.from_value(int(params.get(k))).isoformat()))
+                    print(
+                        "- %s: %s"
+                        % (k, C3DateTime.from_value(int(params.get(k))).isoformat())
+                    )
                 else:
                     print("- %s: %s" % (k, params.get(k)))
     except Exception as e:

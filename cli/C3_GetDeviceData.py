@@ -9,11 +9,15 @@ from c3.utils import C3DateTime
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('host', help='C3 panel IP address or host name')
-    parser.add_argument('--password', help='Password')
-    parser.add_argument('--table', help='Table to request')
-    parser.add_argument('--field', nargs='+', help='Field name(s) to request')
-    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
+    parser.add_argument("host", help="C3 panel IP address or host name")
+    parser.add_argument("--password", help="Password")
+    parser.add_argument("--table", help="Table to request")
+    parser.add_argument("--field", nargs="+", help="Field name(s) to request")
+    parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        help="Enable verbose debug output",
+    )
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
@@ -35,8 +39,11 @@ def main():
                 print("No device data records")
             for record in data:
                 first = True
-                for (field_name, field_value) in record.items():
-                    print("%s %s: %s" % ("-" if first else " ", field_name, str(field_value)))
+                for field_name, field_value in record.items():
+                    print(
+                        "%s %s: %s"
+                        % ("-" if first else " ", field_name, str(field_value))
+                    )
                     first = False
 
     except Exception as e:

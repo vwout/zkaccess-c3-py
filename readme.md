@@ -8,6 +8,7 @@ A snapshot can be found at [licjapodaca/Pull-SDK-Demo](https://github.com/licjap
 [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/vwout/zkaccess-c3-py?style=flat-square)
 [![PyPi Version](https://img.shields.io/pypi/v/zkaccess-c3.svg)](https://pypi.python.org/pypi/zkaccess-c3/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Usage
 To use the library, import the main class:

@@ -8,8 +8,14 @@ from c3 import C3
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--interface', help='IP address of the interface to look for devices on')
-    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
+    parser.add_argument(
+        "--interface", help="IP address of the interface to look for devices on"
+    )
+    parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        help="Enable verbose debug output",
+    )
     args = parser.parse_args()
 
     if args.debug:

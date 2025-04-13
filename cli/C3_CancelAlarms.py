@@ -8,9 +8,13 @@ from c3 import C3, controldevice
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('host', help='C3 panel IP address or host name')
-    parser.add_argument('--password', help='Password')
-    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
+    parser.add_argument("host", help="C3 panel IP address or host name")
+    parser.add_argument("--password", help="Password")
+    parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        help="Enable verbose debug output",
+    )
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)

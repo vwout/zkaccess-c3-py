@@ -18,6 +18,7 @@ class RTLogRecord(ABC):
 
 class DoorAlarmStatusRecord(RTLogRecord):
     """Realtime Log record for a door and alarm status"""
+
     def __init__(self):
         self.alarm_status = bytes(4)
         self.dss_status = bytes(4)
@@ -64,7 +65,9 @@ class DoorAlarmStatusRecord(RTLogRecord):
             record.event_type = consts.EventType(data[10])
         except ValueError:
             record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
-        record.time_second = C3DateTime.from_value(int.from_bytes(data[12:16], byteorder="little"))
+        record.time_second = C3DateTime.from_value(
+            int.from_bytes(data[12:16], byteorder="little")
+        )
         return record
 
     @classmethod
@@ -79,9 +82,9 @@ class DoorAlarmStatusRecord(RTLogRecord):
         }
         """
         record = DoorAlarmStatusRecord()
-        record.alarm_status = bytes.fromhex(data['alarm'])
-        sensor = int(data['sensor'], base=16)
-        record.dss_status = bytes([(sensor >> (i*2)) & 0x03 for i in range(0, 4)])
+        record.alarm_status = bytes.fromhex(data["alarm"])
+        sensor = int(data["sensor"], base=16)
+        record.dss_status = bytes([(sensor >> (i * 2)) & 0x03 for i in range(0, 4)])
         # relay = 00
         # try:
         #     record.verified = consts.VerificationMode(data[9])
@@ -91,7 +94,7 @@ class DoorAlarmStatusRecord(RTLogRecord):
         #     record.event_type = consts.EventType(data[10])
         # except ValueError:
         #     record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
-        record.time_second = C3DateTime.from_str(data['time'])
+        record.time_second = C3DateTime.from_str(data["time"])
         return record
 
     def is_door_alarm(self) -> bool:
@@ -104,7 +107,7 @@ class DoorAlarmStatusRecord(RTLogRecord):
         alarms = []
 
         for i in range(0, 3):
-            if i+1 == door_nr or not door_nr:
+            if i + 1 == door_nr or not door_nr:
                 if self.alarm_status[i] & consts.AlarmStatus.ALARM:
                     if alarms.count(consts.AlarmStatus.ALARM) == 0:
                         alarms.append(consts.AlarmStatus.ALARM)
@@ -115,8 +118,9 @@ class DoorAlarmStatusRecord(RTLogRecord):
         return alarms
 
     def has_alarm(self, door_nr: int, status: consts.AlarmStatus = None):
-        return ((self.alarm_status[door_nr-1] & (status or 0)) == status) or \
-               ((self.alarm_status[door_nr-1] > 0) and status is None)
+        return ((self.alarm_status[door_nr - 1] & (status or 0)) == status) or (
+            (self.alarm_status[door_nr - 1] > 0) and status is None
+        )
 
     def door_sensor_status(self, door_nr: int) -> consts.InOutStatus:
         return consts.InOutStatus(self.dss_status[door_nr - 1] & 0x0F)
@@ -132,28 +136,39 @@ class DoorAlarmStatusRecord(RTLogRecord):
         return is_open
 
     def __repr__(self):
-        repr_arr = ["Door/Alarm Realtime Status:",
-                    "%-12s %-10s" % ("time_second", self.time_second),
-                    "%-12s %-10s %s" % ("event_type", self.event_type, repr(self.event_type)),
-                    "%-12s %-10s %s" % ("verified", self.verified, repr(self.verified)),
-                    "%-12s %-10s" % ("alarm_status", self.alarm_status.hex())]
+        repr_arr = [
+            "Door/Alarm Realtime Status:",
+            "%-12s %-10s" % ("time_second", self.time_second),
+            "%-12s %-10s %s" % ("event_type", self.event_type, repr(self.event_type)),
+            "%-12s %-10s %s" % ("verified", self.verified, repr(self.verified)),
+            "%-12s %-10s" % ("alarm_status", self.alarm_status.hex()),
+        ]
 
         for i in range(0, 4):
             for status in consts.AlarmStatus:
                 if status != consts.AlarmStatus.NONE:
                     if self.alarm_status[i] & status == status:
-                        repr_arr.append("    Door %-2s %-4s %s" % (i, status, repr(status)))
+                        repr_arr.append(
+                            "    Door %-2s %-4s %s" % (i, status, repr(status))
+                        )
 
         repr_arr.append("%-12s %-10s" % ("dss_status", self.dss_status.hex()))
         for i in range(0, 4):
-            repr_arr.append("    Door %-2s %-4s %s" % (i+1, self.dss_status[i],
-                                                       repr(consts.InOutStatus(self.dss_status[i] & 0x0F))))
+            repr_arr.append(
+                "    Door %-2s %-4s %s"
+                % (
+                    i + 1,
+                    self.dss_status[i],
+                    repr(consts.InOutStatus(self.dss_status[i] & 0x0F)),
+                )
+            )
 
         return "\r\n".join(repr_arr)
 
 
 class EventRecord(RTLogRecord):
     """Realtime Event record"""
+
     def __init__(self):
         self.card_no = 0
         self.pin = 0
@@ -201,7 +216,9 @@ class EventRecord(RTLogRecord):
             record.in_out_state = consts.InOutDirection(data[11])
         except ValueError:
             record.in_out_state = consts.InOutDirection.UNKNOWN_UNSUPPORTED
-        record.time_second = C3DateTime.from_value(int.from_bytes(data[12:16], byteorder="little"))
+        record.time_second = C3DateTime.from_value(
+            int.from_bytes(data[12:16], byteorder="little")
+        )
         return record
 
     @classmethod
@@ -220,22 +237,22 @@ class EventRecord(RTLogRecord):
         }
         """
         record = EventRecord()
-        record.card_no = int(data['cardno'])
-        record.pin = int(data['pin'])
+        record.card_no = int(data["cardno"])
+        record.pin = int(data["pin"])
         try:
-            record.verified = consts.VerificationMode(int(data['verifytype']))
+            record.verified = consts.VerificationMode(int(data["verifytype"]))
         except ValueError:
             record.verified = consts.VerificationMode.OTHER
-        record.port_nr = int(data['eventaddr'])
+        record.port_nr = int(data["eventaddr"])
         try:
-            record.event_type = consts.EventType(int(data['event']))
+            record.event_type = consts.EventType(int(data["event"]))
         except ValueError:
             record.event_type = consts.EventType.UNKNOWN_UNSUPPORTED
         try:
-            record.in_out_state = consts.InOutDirection(int(data['inoutstatus']))
+            record.in_out_state = consts.InOutDirection(int(data["inoutstatus"]))
         except ValueError:
             record.in_out_state = consts.InOutDirection.UNKNOWN_UNSUPPORTED
-        record.time_second = C3DateTime.from_str(data['time'])
+        record.time_second = C3DateTime.from_str(data["time"])
         return record
 
     def is_door_alarm(self) -> bool:
@@ -245,19 +262,24 @@ class EventRecord(RTLogRecord):
         return True
 
     def __repr__(self):
-        repr_arr = ["Realtime Event:",
-                    "%-12s %-10s" % ("time_second", self.time_second),
-                    "%-12s %-10s %s" % ("event_type", self.event_type, repr(self.event_type)),
-                    "%-12s %-10s %s" % ("in_out_state", self.in_out_state, repr(self.in_out_state)),
-                    "%-12s %-10s %s" % ("verified", self.verified, repr(self.verified)),
-                    "%-12s %-10s" % ("card_no", self.card_no),
-                    # "%-12s %-10s" % ("pin", self.pin),
-                    "%-12s %-10s" % ("port_no", self.port_nr)]
+        repr_arr = [
+            "Realtime Event:",
+            "%-12s %-10s" % ("time_second", self.time_second),
+            "%-12s %-10s %s" % ("event_type", self.event_type, repr(self.event_type)),
+            "%-12s %-10s %s"
+            % ("in_out_state", self.in_out_state, repr(self.in_out_state)),
+            "%-12s %-10s %s" % ("verified", self.verified, repr(self.verified)),
+            "%-12s %-10s" % ("card_no", self.card_no),
+            # "%-12s %-10s" % ("pin", self.pin),
+            "%-12s %-10s" % ("port_no", self.port_nr),
+        ]
 
         return "\r\n".join(repr_arr)
 
 
-def factory(log_message: [bytes, bytearray, dict]) -> DoorAlarmStatusRecord | EventRecord:
+def factory(
+    log_message: [bytes, bytearray, dict]
+) -> DoorAlarmStatusRecord | EventRecord:
     if isinstance(log_message, (bytes, bytearray)):
         if log_message[10] == consts.EventType.DOOR_ALARM_STATUS:
             rtlog = DoorAlarmStatusRecord.from_bytes(log_message)

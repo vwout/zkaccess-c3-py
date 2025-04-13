@@ -15,6 +15,7 @@ C3_DISCOVERY_MESSAGE = "CallSecurityDevice"
 
 class Command(IntEnum):
     """Enumeration of supported device_name interaction commands"""
+
     CONNECT_SESSION_LESS = 0x01
     DISCONNECT = 0x02
     DATETIME = 0x03
@@ -63,33 +64,33 @@ class _IntEnumWithDescription(IntEnum):
 
 # Control operations
 class ControlOperation(_IntEnumWithDescription):
-    OUTPUT = 1,         "Output operation (door or auxiliary)"
-    CANCEL_ALARM = 2,   "Cancel alarm"
+    OUTPUT = 1, "Output operation (door or auxiliary)"
+    CANCEL_ALARM = 2, "Cancel alarm"
     RESTART_DEVICE = 3, "Restart Device"
     ENDIS_NO_STATE = 4, "Enable/disable normal open state"
 
 
 class ControlOutputAddress(_IntEnumWithDescription):
     DOOR_OUTPUT = 1, "Door output"
-    AUX_OUTPUT = 2,  "Auxiliary output"
+    AUX_OUTPUT = 2, "Auxiliary output"
 
 
 class DoorSensorType(_IntEnumWithDescription):
-    NONE = 0,         "Not available"
-    NORMAL_OPEN = 1,  "Normal open"
+    NONE = 0, "Not available"
+    NORMAL_OPEN = 1, "Normal open"
     NORMAL_CLOSE = 2, "Normal close"
 
 
 # Event values
 class VerificationMode(_IntEnumWithDescription):
-    NONE = 0,                "None"
-    FINGER = 1,              "Only finger"
-    PASSWORD = 3,            "Only password"
-    CARD = 4,                "Only card"
-    CARD_OR_FINGER = 6,      "Card or finger"
-    CARD_WITH_FINGER = 10,   "Card and finger"
+    NONE = 0, "None"
+    FINGER = 1, "Only finger"
+    PASSWORD = 3, "Only password"
+    CARD = 4, "Only card"
+    CARD_OR_FINGER = 6, "Card or finger"
+    CARD_WITH_FINGER = 10, "Card and finger"
     CARD_WITH_PASSWORD = 11, "Card and password"
-    OTHER = 200,             "Others"
+    OTHER = 200, "Others"
 
 
 class EventType(_IntEnumWithDescription):
@@ -113,7 +114,10 @@ class EventType(_IntEnumWithDescription):
     FP_NORMAL_OPEN_TZ = 16, "Press Fingerprint during Normal Open Time Zone"
     CARD_FP_OPEN = 17, "Card plus Fingerprint Open"
     FIRST_CARD_NORMAL_OPEN_FP = 18, "First Card Normal Open (Press Fingerprint)"
-    FIRST_CARD_NORMAL_OPEN_CARD_FP = 19, "First Card Normal Open (Card plus Fingerprint)"
+    FIRST_CARD_NORMAL_OPEN_CARD_FP = (
+        19,
+        "First Card Normal Open (Card plus Fingerprint)",
+    )
     TOO_SHORT_PUNCH_INTERVAL = 20, "Too Short Punch Interval"
     DOOR_INACTIVE_TZ = 21, "Door Inactive Time Zone (Punch Card)"
     ILLEGAL_TZ = 22, "Illegal Time Zone"
@@ -153,21 +157,110 @@ class EventType(_IntEnumWithDescription):
 
 class InOutDirection(_IntEnumWithDescription):
     ENTRY = 0, "Entry"
-    EXIT = 3,  "Exit"
-    NONE = 2,  "None"
+    EXIT = 3, "Exit"
+    NONE = 2, "None"
     UNKNOWN_UNSUPPORTED = 15, "Unknown"
 
 
 class AlarmStatus(_IntEnumWithDescription):
-    NONE = 0,              "None"
-    ALARM = 1,             "Alarm"
+    NONE = 0, "None"
+    ALARM = 1, "Alarm"
     DOOR_OPEN_TIMEOUT = 2, "Door opening timeout"
 
 
 class InOutStatus(_IntEnumWithDescription):
     UNKNOWN = 0, "Unknown"
-    CLOSED = 1,  "Closed"
-    OPEN = 2,    "Open"
+    CLOSED = 1, "Closed"
+    OPEN = 2, "Open"
 
 
-
+# ParameterStruct = namedtuple("read" , "write")
+# ParameterAccess = dict(
+#    "~SerialNumber" = ParameterStruct(True, False),
+#    "LockCount" = ParameterStruct(True, False),
+#    "ReaderCount" = ParameterStruct(True, False),
+#    "AuxInCount" = ParameterStruct(True, False),
+#    "AuxOutCount" = ParameterStruct(True, False),
+#    "ComPwd" = ParameterStruct(True, True),
+#    "IPAddress" = ParameterStruct(True, True),
+#    "GATEIPAddress" = ParameterStruct(True, True),
+#    "RS232BaudRate" = ParameterStruct(True, True),
+#    "NetMask" = ParameterStruct(True, True),
+#    "AntiPassback" = ParameterStruct(True, True),
+#    "InterLock" = ParameterStruct(True, True),
+#    "Door1ForcePassWord" = ParameterStruct(True, True),
+#    "Door2ForcePassWord" = ParameterStruct(True, True),
+#    "Door3ForcePassWord" = ParameterStruct(True, True),
+#    "Door4ForcePassWord" = ParameterStruct(True, True),
+#    "Door1SupperPassWord" = ParameterStruct(True, True),
+#    "Door2SupperPassWord" = ParameterStruct(True, True),
+#    "Door3SupperPassWord" = ParameterStruct(True, True),
+#    "Door4SupperPassWord" = ParameterStruct(True, True),
+#    "Door1CloseAndLock" = ParameterStruct(True, True),
+#    "Door2CloseAndLock" = ParameterStruct(True, True),
+#    "Door3CloseAndLock" = ParameterStruct(True, True),
+#    "Door4CloseAndLock" = ParameterStruct(True, True),
+#    "Door1SensorType" = ParameterStruct(True, True),
+#    "Door2SensorType" = ParameterStruct(True, True),
+#    "Door3SensorType" = ParameterStruct(True, True),
+#    "Door4SensorType" = ParameterStruct(True, True),
+#    "Door1Drivertime" = ParameterStruct(True, True),
+#    "Door2Drivertime" = ParameterStruct(True, True),
+#    "Door3Drivertime" = ParameterStruct(True, True),
+#    "Door4Drivertime" = ParameterStruct(True, True),
+#    "Door1Detectortime" = ParameterStruct(True, True),
+#    "Door2Detectortime" = ParameterStruct(True, True),
+#    "Door3Detectortime" = ParameterStruct(True, True),
+#    "Door4Detectortime" = ParameterStruct(True, True),
+#    "Door1VerifyType" = ParameterStruct(True, True),
+#    "Door2VerifyType" = ParameterStruct(True, True),
+#    "Door3VerifyType" = ParameterStruct(True, True),
+#    "Door4VerifyType" = ParameterStruct(True, True),
+#    "Door1MultiCardOpenDoor" = ParameterStruct(True, True),
+#    "Door2MultiCardOpenDoor" = ParameterStruct(True, True),
+#    "Door3MultiCardOpenDoor" = ParameterStruct(True, True),
+#    "Door4MultiCardOpenDoor" = ParameterStruct(True, True),
+#    "Door1FirstCardOpenDoor" = ParameterStruct(True, True),
+#    "Door2FirstCardOpenDoor" = ParameterStruct(True, True),
+#    "Door3FirstCardOpenDoor" = ParameterStruct(True, True),
+#    "Door4FirstCardOpenDoor" = ParameterStruct(True, True),
+#    "Door1ValidTZ" = ParameterStruct(True, True),
+#    "Door2ValidTZ" = ParameterStruct(True, True),
+#    "Door3ValidTZ" = ParameterStruct(True, True),
+#    "Door4ValidTZ" = ParameterStruct(True, True),
+#    "Door1KeepOpenTimeZone" = ParameterStruct(True, True),
+#    "Door2KeepOpenTimeZone" = ParameterStruct(True, True),
+#    "Door3KeepOpenTimeZone" = ParameterStruct(True, True),
+#    "Door4KeepOpenTimeZone" = ParameterStruct(True, True),
+#    "Door1Intertime" = ParameterStruct(True, True),
+#    "Door2Intertime" = ParameterStruct(True, True),
+#    "Door3Intertime" = ParameterStruct(True, True),
+#    "Door4Intertime" = ParameterStruct(True, True),
+#    "WatchDog" = ParameterStruct(True, True),
+#    "Door4ToDoor2" = ParameterStruct(True, True),
+#    "Door1CancelKeepOpenDay" = ParameterStruct(True, False),
+#    "Door2CancelKeepOpenDay" = ParameterStruct(True, False),
+#    "Door3CancelKeepOpenDay" = ParameterStruct(True, False),
+#    "Door4CancelKeepOpenDay" = ParameterStruct(True, False),
+#    "BackupTime" = ParameterStruct(True, True),
+#    "Reboot" = ParameterStruct(False, True),
+#    "DateTime" = ParameterStruct(False, True),
+#    "Door4ToDoor2" = ParameterStruct(True, True),
+#    "InBIOTowWay " = ParameterStruct(True, True),
+#    "~ZKFPVersion" = ParameterStruct(True, False),
+#    "~DSTF" = ParameterStruct(True, True),
+#    "DaylightSavingTimeOn" = ParameterStruct(True, True),
+#    "DLSTMode" = ParameterStruct(True, True),
+#    "DaylightSavingTime" = ParameterStruct(True, True),
+#    "StandardTime" = ParameterStruct(True, True),
+#    "WeekOfMonth1" = ParameterStruct(True, True),
+#    "WeekOfMonth2" = ParameterStruct(True, True),
+#    "WeekOfMonth3" = ParameterStruct(True, True),
+#    "WeekOfMonth4" = ParameterStruct(True, True),
+#    "WeekOfMonth5" = ParameterStruct(True, True),
+#    "WeekOfMonth6" = ParameterStruct(True, True),
+#    "WeekOfMonth7" = ParameterStruct(True, True),
+#    "WeekOfMonth8" = ParameterStruct(True, True),
+#    "WeekOfMonth9" = ParameterStruct(True, True),
+#    "WeekOfMonth10" = ParameterStruct(True, True),
+# )

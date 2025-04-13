@@ -28,6 +28,12 @@ jobs:
       - name: Run isort
         run: python3 -m isort --check --profile black C3 cli tests
 
+      - name: "Run Black"
+        run: python3 -m black --check c3 cli tests
+
+      #- name: "Run Ruff"
+      #  run: python3 -m ruff check -q c3 cli tests
+
       - name: Test with pytest
         run: |
           pip install pytest pytest-cov

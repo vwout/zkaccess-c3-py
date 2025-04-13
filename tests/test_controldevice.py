@@ -2,19 +2,23 @@ from c3 import consts, controldevice
 
 
 def test_c3_device_control_message_output_door():
-    output_operation = controldevice.ControlDeviceOutput(1, consts.ControlOutputAddress.DOOR_OUTPUT, 200)
-    assert bytes([0x01, 0x01, 0x01, 0xc8, 0x00]) == output_operation.to_bytes()
+    output_operation = controldevice.ControlDeviceOutput(
+        1, consts.ControlOutputAddress.DOOR_OUTPUT, 200
+    )
+    assert bytes([0x01, 0x01, 0x01, 0xC8, 0x00]) == output_operation.to_bytes()
     print(repr(output_operation))
 
 
 def test_c3_device_control_message_output_door_int():
     output_operation = controldevice.ControlDeviceOutput(3, 1, 200)
-    assert bytes([0x01, 0x03, 0x01, 0xc8, 0x00]) == output_operation.to_bytes()
+    assert bytes([0x01, 0x03, 0x01, 0xC8, 0x00]) == output_operation.to_bytes()
     print(repr(output_operation))
 
 
 def test_c3_device_control_message_output_aux():
-    output_operation = controldevice.ControlDeviceOutput(2, consts.ControlOutputAddress.AUX_OUTPUT, 100)
+    output_operation = controldevice.ControlDeviceOutput(
+        2, consts.ControlOutputAddress.AUX_OUTPUT, 100
+    )
     assert bytes([0x01, 0x02, 0x02, 0x64, 0x00]) == output_operation.to_bytes()
     print(repr(output_operation))
 

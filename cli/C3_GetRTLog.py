@@ -9,9 +9,13 @@ from c3 import C3, rtlog
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('host', help='C3 panel IP address or host name')
-    parser.add_argument('--password', help='Password')
-    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
+    parser.add_argument("host", help="C3 panel IP address or host name")
+    parser.add_argument("--password", help="Password")
+    parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        help="Enable verbose debug output",
+    )
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
@@ -41,8 +45,12 @@ def main():
                     if isinstance(record, rtlog.DoorAlarmStatusRecord):
                         last_record_is_status = True
 
-                print(f"Door status: {[repr(panel.lock_status(i+1)) for i in range(panel.nr_of_locks)]}:")
-                print(f"Aux status: {[repr(panel.aux_out_status(i+1)) for i in range(panel.nr_aux_out)]}:")
+                print(
+                    f"Door status: {[repr(panel.lock_status(i+1)) for i in range(panel.nr_of_locks)]}:"
+                )
+                print(
+                    f"Aux status: {[repr(panel.aux_out_status(i+1)) for i in range(panel.nr_aux_out)]}:"
+                )
 
                 if last_record_is_status:
                     time.sleep(9)

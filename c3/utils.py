@@ -34,12 +34,14 @@ class C3DateTime(datetime):
          Day = ( DateTime / 86400 )  %  31 + 1
          Month= ( DateTime / 2678400 ) % 12 + 1
          Year = (DateTime / 32140800 ) + 2000"""
-        return C3DateTime(year=math.floor(value / 32140800) + 2000,
-                          month=math.floor(value / 2678400) % 12 + 1,
-                          day=math.floor(value / 86400) % 31 + 1,
-                          hour=math.floor(value / 3600) % 24,
-                          minute=math.floor(value / 60) % 60,
-                          second=value % 60)
+        return C3DateTime(
+            year=math.floor(value / 32140800) + 2000,
+            month=math.floor(value / 2678400) % 12 + 1,
+            day=math.floor(value / 86400) % 31 + 1,
+            hour=math.floor(value / 3600) % 24,
+            minute=math.floor(value / 60) % 60,
+            second=value % 60,
+        )
 
     @classmethod
     def from_str(cls, value: str):
@@ -47,5 +49,10 @@ class C3DateTime(datetime):
         return datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
 
     def to_value(self) -> int:
-        return ((self.year - 2000) * 12 * 31 + (self.month - 1) * 31 + (self.day - 1)) * (24 * 60 * 60) + \
-               (self.hour * 60 * 60) + (self.minute * 60) + self.second
+        return (
+            ((self.year - 2000) * 12 * 31 + (self.month - 1) * 31 + (self.day - 1))
+            * (24 * 60 * 60)
+            + (self.hour * 60 * 60)
+            + (self.minute * 60)
+            + self.second
+        )

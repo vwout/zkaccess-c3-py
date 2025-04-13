@@ -10,11 +10,18 @@ from c3.utils import C3DateTime
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('host', help='C3 panel IP address or host name')
-    parser.add_argument('--password', help='Password')
-    parser.add_argument('--time', type=datetime.fromisoformat,
-                        help='Time to set as ISO format, e.g. YYYY-MM-DD HH:mm:ss (defaults to now)')
-    parser.add_argument('--debug', action=argparse.BooleanOptionalAction, help='Enable verbose debug output')
+    parser.add_argument("host", help="C3 panel IP address or host name")
+    parser.add_argument("--password", help="Password")
+    parser.add_argument(
+        "--time",
+        type=datetime.fromisoformat,
+        help="Time to set as ISO format, e.g. YYYY-MM-DD HH:mm:ss (defaults to now)",
+    )
+    parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        help="Enable verbose debug output",
+    )
     args = parser.parse_args()
 
     print("Connecting to %s" % args.host)
@@ -34,7 +41,10 @@ def main():
             params = panel.get_device_param(["DateTime"])
             for k in params:
                 if k == "DateTime":
-                    print("- %s: %s" % (k, C3DateTime.from_value(int(params.get(k))).isoformat()))
+                    print(
+                        "- %s: %s"
+                        % (k, C3DateTime.from_value(int(params.get(k))).isoformat())
+                    )
     except Exception as e:
         print(f"Setting the date/time failed: {e}")
     finally:
