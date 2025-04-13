@@ -1,0 +1,4 @@
+black==23.9.1
+colorlog==6.7.0
+isort==5.12.0
+ruff==0.0.267
