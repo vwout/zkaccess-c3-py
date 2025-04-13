@@ -1,5 +1,6 @@
 from enum import IntEnum, unique
-from collections import namedtuple
+
+# from collections import namedtuple
 
 # Defaults
 C3_PORT_DEFAULT = 4370

@@ -1,8 +1,8 @@
 from unittest import mock
 
+from c3.consts import EventType, InOutStatus, VerificationMode
 from c3.core import C3
-from c3.consts import VerificationMode, InOutStatus, EventType
-from c3.rtlog import EventRecord, DoorAlarmStatusRecord
+from c3.rtlog import DoorAlarmStatusRecord, EventRecord
 from c3.utils import C3DateTime
 
 

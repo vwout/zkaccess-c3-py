@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-from datetime import datetime
 import logging
 import sys
+from datetime import datetime
 
 from c3 import C3
 from c3.utils import C3DateTime

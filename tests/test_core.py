@@ -1,12 +1,11 @@
-from unittest import mock
-from datetime import datetime
 import time
+from datetime import datetime
+from unittest import mock
+
 import pytest
 
-from c3 import rtlog
+from c3 import consts, controldevice, rtlog
 from c3.core import C3
-from c3 import consts
-from c3 import controldevice
 
 
 @pytest.fixture

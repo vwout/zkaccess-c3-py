@@ -1,5 +1,4 @@
-from c3 import controldevice
-from c3 import consts
+from c3 import consts, controldevice
 
 
 def test_c3_device_control_message_output_door():
