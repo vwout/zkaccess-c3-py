@@ -109,8 +109,14 @@ get_device_param(params_arr)
 ```
 
 This method reads device parameters, both configuration and static parameters.
-The argument is a list of (maximum 30) strings with the parameter names for which the values need to be returned. Valid values are (reduced list):
-   ~SerialNumber, AntiPassback, AuxInCount, AuxOutCount, BackupTime, ComPwd, DateTime, DaylightSavingTime, DaylightSavingTimeOn, DLSTMode, Door{N}CancelKeepOpenDay, Door{N}CloseAndLock, Door{N}Detectortime, Door{N}Drivertime, Door{N}FirstCardOpenDoor, Door{N}ForcePassWord, Door{N}Intertime, Door{N}KeepOpenTimeZone, Door{N}MultiCardOpenDoor, Door{N}SensorType, Door{N}SupperPassWord, Door{N}ValidTZ, Door{N}VerifyType, GATEIPAddress, InBIOTowWay , InterLock, IPAddress, LockCount, NetMask, ReaderCount, Reboot, RS232BaudRate, StandardTime, WatchDog, WeekOfMonth{N},
+The argument is a list of (maximum 30) strings with the parameter names for which the values need to be returned. 
+Valid values are (reduced list):
+- ~CardFormatFunOn, ~DeviceName, ~Ext485ReaderFunOn, ~IsOnlyRFMachine, ~MaxAttLogCount, ~MaxUserCount, ~MaxUserFingerCount, ~SerialNumber, ~ZKFPVersion, 
+  AntiPassback, AuxInCount, AuxOutCount, BackupTime, DateTime, DaylightSavingTime, DaylightSavingTimeOn, DeviceID, DLSTMode, 
+  Door{N}CancelKeepOpenDay, Door{N}CloseAndLock, Door{N}Detectortime, Door{N}Drivertime, Door{N}FirstCardOpenDoor, Door{N}ForcePassWord, Door{N}Intertime, Door{N}KeepOpenTimeZone, Door{N}MultiCardOpenDoor, Door{N}SensorType, Door{N}SupperPassWord, Door{N}ValidTZ, Door{N}VerifyType, 
+  Door4ToDoor2, FirmVer, GATEIPAddress, InBIOTowWay, InterLock, 
+  IPAddress, LockCount, MachineType, MasterInbio485, MThreshold, NetMask, PC485AsInbio485, ReaderCount, Reboot, RS232BaudRate, SimpleEventType, StandardTime, WatchDog, WeekOfMonth{N}
+
 For the full list and the meaning of the returned value, refer to the PullSDK specification.
 The return value is a table of key/value pairs with the parameter name and value.
 
