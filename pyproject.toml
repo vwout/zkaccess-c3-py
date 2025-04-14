@@ -1,6 +1,6 @@
 [project]
 name = "zkaccess_c3"
-version = "0.0.14"
+version = "0.0.15"
 description = "A native Python library for communicating with the ZKAccess C3 and inBio Door Access Control Panels."
 authors = [
     {name = "Vwout", email="vwout@users.noreply.github.com"},
