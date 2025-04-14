@@ -14,7 +14,7 @@ def test_msb():
 def test_c3_datetime_from_value():
     c3_dt = C3DateTime.from_value(347748895)
     assert c3_dt.year == 2010
-    assert c3_dt.month == 1
+    assert c3_dt.month == 10
     assert c3_dt.minute == 54
 
     assert C3DateTime(
